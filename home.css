@@ -1,0 +1,266 @@
+:root {
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+    /* Light Blue Theme Colors */
+    --bg-light-blue: #e3f2fd;
+    --bg-gradient: linear-gradient(135deg, #ffffff 0%, #bbdefb 10%);
+    --glass-white: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --accent-blue: #1565c0;
+    --text-main: #1a237e;
+}
+
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body { 
+    height: 100vh; display: flex; overflow: hidden; 
+    background: var(--bg-gradient) !important; 
+    color: var(--text-main); 
+}
+
+/* Sidebar Polish */
+.sidebar {
+    width: 260px;
+    background: var(--glass-white);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: calc(40px + var(--safe-top)) 20px 40px 20px;
+    border-right: 1px solid var(--glass-border);
+    z-index: 100;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 20px;
+    color: var(--text-main);
+    text-decoration: none;
+    border-radius: 15px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.nav-item.active {
+    background: white;
+    opacity: 1;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.3); opacity: 1; }
+
+/* Main Content & Circular Progress */
+.content { flex: 1; padding: 40px; overflow-y: auto; }
+
+.progress-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+}
+
+.circular-progress {
+    position: relative;
+    width: 240px; height: 240px;
+}
+
+svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+.bg-ring { fill: none; stroke: rgba(255,255,255,0.5); stroke-width: 8; }
+
+.progress-ring {
+    fill: none;
+    stroke: var(--accent-blue);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 283; /* Approximately 2 * PI * 45 */
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.progress-text h2 { font-size: 3rem; font-weight: 800; color: var(--accent-blue); }
+.progress-text p { opacity: 0.7; font-size: 1rem; margin-top: -5px; font-weight: 500; }
+
+/* Quick Log Grid */
+.log-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.log-grid button {
+    background: white;
+    border: 1px solid var(--glass-border);
+    padding: 20px;
+    border-radius: 20px;
+    color: var(--accent-blue);
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.log-grid button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+}
+
+.custom-row input {
+    background: white;
+    border: 1px solid var(--glass-border);
+    padding: 15px;
+    border-radius: 15px;
+    outline: none;
+    color: var(--text-main);
+}
+
+/* Mini Stats Cards */
+.mini-stats { display: flex; gap: 15px; margin-top: 30px; }
+
+.stat-card {
+    flex: 1;
+    background: var(--glass-white);
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    text-align: center;
+    font-weight: 600;
+}
+
+/* User Profile & Logout Menu */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 18px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.user-profile:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--accent-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.logout-dropdown {
+    display: none; /* Controlled by JS toggleLogout() */
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.logout-dropdown button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    color: #ff3b30; /* Danger Red */
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Custom Input Row */
+.custom-row {
+    grid-column: span 2;
+    display: flex;
+    gap: 10px;
+}
+
+.custom-row input {
+    flex: 1;
+    border: 1px solid var(--glass-border);
+    padding: 15px;
+    border-radius: 15px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.custom-row input:focus {
+    border-color: var(--accent-blue);
+}
+
+/* Undo Button Specifics */
+.undo-btn {
+    grid-column: span 2;
+    background: rgba(255, 59, 48, 0.1) !important;
+    color: #ff3b30 !important;
+    border: 1px solid rgba(255, 59, 48, 0.2) !important;
+    margin-top: 5px;
+}
+
+.undo-btn:hover {
+    background: rgba(255, 59, 48, 0.2) !important;
+}
+
+.toast-msg {
+    background: var(--accent-blue);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    animation: slideDown 0.4s ease forwards;
+    font-weight: 500;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* EFFECTS */
+#waves-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Keep behind sidebar and cards */
+    pointer-events: none; /* Let mouse clicks pass through to buttons */
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.waves-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+

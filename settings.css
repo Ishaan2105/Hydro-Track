@@ -1,0 +1,295 @@
+/* settings.css - Comprehensive Polished Theme */
+
+/* --- Main Layout Containers --- */
+.settings-card {
+    background: #ffffff !important;
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    color: #333 !important;
+}
+
+.settings-card h3 {
+    color: #1565c0;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+/* --- Form Inputs (Weight, Goal, Password, Time) --- */
+input[type="number"], 
+input[type="text"], 
+input[type="password"],
+input[type="time"] {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+    color: #333;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    border-color: #1565c0;
+    background: #fff;
+}
+
+/* --- Password Box & Visibility Eye --- */
+.pass-box { 
+    position: relative; 
+    margin-bottom: 10px; 
+}
+
+.pass-box .eye { 
+    position: absolute; 
+    right: 15px; 
+    top: 22px; /* Centered relative to padded input */
+    color: #666; 
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+/* --- Buttons & Groups --- */
+.btn-group { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 15px; 
+}
+
+.btn-save, .btn-cancel, .manual-time button {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-save { 
+    flex: 2; 
+    background: #1565c0; 
+    color: white; 
+}
+
+.btn-cancel { 
+    flex: 1; 
+    background: #eeeeee; 
+    color: #333; 
+}
+
+.manual-time {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.manual-time button {
+    background:#1565c0 ;
+    color: #e3f2fd;
+    white-space: nowrap;
+}
+
+.btn-save:active, .btn-cancel:active, .manual-time button:active { 
+    transform: scale(0.97); 
+}
+
+/* --- Notification Mode Selector (Segmented Control) --- */
+.notif-type-selector {
+    display: flex; 
+    background: #f0f0f0;
+    border-radius: 12px; 
+    margin: 15px 0; 
+    padding: 5px;
+}
+
+.notif-type-selector button {
+    flex: 1; 
+    background: transparent; 
+    color: #666; 
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notif-type-selector button.active { 
+    background: #ffffff; 
+    color: #1565c0; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* --- Reminder Rows & Toggles --- */
+.time-toggle-row {
+    background: #f8fbff;
+    padding: 12px 15px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border: 1px solid #eef2f7;
+}
+
+.time-toggle-row label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+}
+
+.daily-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* --- Post-Meal Row --- */
+.post-meal-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-top: 20px; 
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-weight: 600;
+}
+
+/* --- Standard Toggle Switch UI --- */
+.switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 3px;
+    background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: #1565c0; }
+input:checked + .slider:before { transform: translateX(24px); }
+
+/* --- Smaller Daily Toggle Variant --- */
+.switch.small { width: 35px; height: 20px; }
+.switch.small .slider:before { height: 14px; width: 14px; left: 3px; bottom: 3px; }
+.switch.small input:checked + .slider:before { transform: translateX(15px); }
+
+/* --- Active Reminders Dynamic List --- */
+.reminders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reminder-item {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 15px;
+    border-left: 5px solid #1565c0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.reminder-item .time-tag {
+    font-weight: 800;
+    color: #1565c0;
+    font-size: 0.95rem;
+}
+
+.reminder-item .msg-tag {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Solely for the Set Target button */
+#set-target-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 15px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+
+    /* --- NON-SELECTED STATE --- */
+    background-color: #1565c0; /* White internal base */
+    border: 4px solid #ffffff; /* Wide blue border */
+    color: #ffffff;            /* Blue text */
+}
+
+/* --- SELECTED STATE (When clicked) --- */
+#set-target-btn:active {
+    transform: scale(0.97);
+    background-color: #42a5f5; /* Light blue background */
+    color: #ffffff;            /* White text */
+    border-color: #42a5f5;     /* Border matches light blue */
+    box-shadow: 0 4px 15px rgba(66, 165, 245, 0.4);
+}
+
+/* Styling the dustbin button */
+.time-toggle-row button {
+    background: none;
+    border: none;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+}
+
+.time-toggle-row button:hover {
+    transform: scale(1.2);
+    opacity: 1;
+    color: #ff3b30; /* Danger red from your home.css */
+}
+
+.time-toggle-row button:active {
+    transform: scale(0.9);
+}
+
+/* EFFECTS */
+#waves-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Keep behind sidebar and cards */
+    pointer-events: none; /* Let mouse clicks pass through to buttons */
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.waves-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
