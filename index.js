@@ -1,5 +1,3 @@
-index.js
-
 const API_URL = "https://hydrotrack-api.onrender.com";
 
 const rainContainer = document.getElementById('rain-container');
