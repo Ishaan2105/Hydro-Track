@@ -202,34 +202,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 // --- 1. Enhanced Registration (Check Username AND Email) ---
-document.getElementById('signupForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('regEmail').value.trim();
-    const user = document.getElementById('regUser').value.trim();
-    const pass = document.getElementById('regPass').value;
-    const conf = document.getElementById('regConfirm').value;
 
-    if(pass !== conf) return showNotification("Passwords don't match!");
-
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-
-    // Check if Username OR Email already exists
-    const emailExists = users.some(u => u.email === email);
-    const userExists = users.some(u => u.username === user);
-
-    // if (emailExists) return alert("This email is already registered!");
-    // if (userExists) return alert("Username is already taken!");
-
-    users.push({
-        email: email,
-        username: user, 
-        password: pass
-    });
-
-    localStorage.setItem('users', JSON.stringify(users));
-    // alert("Account created successfully! You can now login.");
-    toggleForm();
-});
 
 // --- 2. Forgot Password Logic ---
 function showRecovery() {
