@@ -472,7 +472,16 @@ setInterval(() => {
 
             // If it's a "Once" alarm, turn it off immediately after notifying
             if (!dailyToggle.checked) {
+                // 1. Find the reminder in your cloud-synced data object and turn it off
+                const reminderIndex = data.reminders.findIndex(r => r.time === alarmTime);
+                if (reminderIndex !== -1) {
+                    data.reminders[reminderIndex].active = false;
+                }
+            
+                // 2. Update the UI Checkbox
                 checkbox.checked = false;
+            
+                // 3. Refresh lists and Push to MongoDB
                 if (typeof loadReminders === 'function') loadReminders();
                 if (typeof syncToCloud === 'function') syncToCloud();
             }
