@@ -7,9 +7,10 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(express.json());
+// --- Replace your current app.use(cors(...)) with this ---
 app.use(cors({
     origin: function (origin, callback) {
-        // 1. Allow requests with no origin (like mobile apps or curl)
+        // Allow requests with no origin (like mobile apps)
         if (!origin) return callback(null, true);
 
         const allowedOrigins = [
@@ -19,8 +20,7 @@ app.use(cors({
             "http://localhost:5500"
         ];
 
-        // 2. Check if the origin (lowercased) is in our allowed list
-        // Note: We use .replace to remove any trailing slashes for a cleaner check
+        // Clean the incoming origin to match our list
         const cleanOrigin = origin.replace(/\/$/, "").toLowerCase();
         const isAllowed = allowedOrigins.some(authOrigin => 
             authOrigin.replace(/\/$/, "").toLowerCase() === cleanOrigin
@@ -29,13 +29,12 @@ app.use(cors({
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.log("❌ Blocked by CORS:", origin); // This helps you see the "bad" URL in Render logs
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 
 // --- 1. MONGODB CONNECTION ---
