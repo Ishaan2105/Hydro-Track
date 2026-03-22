@@ -253,29 +253,26 @@ async function recoverPassword() {
     if (!email) return showNotification("Please enter your email.");
 
     try {
-            // UPDATED: Now points to your live Render backend
-            const response = await fetch(`${API_URL}/auth/recover`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-            
-            const result = await response.json();
+        const response = await fetch(`${API_URL}/auth/recover`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const result = await response.json();
 
-            if (response.ok) {
-                showNotification("Temporary password sent to your email!");
-                hideRecovery();
-            } else {
-                // Displays specific errors like "No account found with this email"
-                showNotification(result.error);
-            }
-        } catch (err) {
-            // Helpful message for the Render "cold start" phase
-            showNotification("Cloud connection failed. Please try again in a few seconds.");
+        if (response.ok) {
+            showNotification("Temporary password sent to your email!");
+            hideRecovery();
+        } else {
+            showNotification(result.error);
         }
+    } catch (err) {
+        showNotification("Cloud connection failed. Please try again in a few seconds.");
     }
 }
 
+    
 // Notification System
 function showNotification(message) {
     const container = document.getElementById('notification-container');
