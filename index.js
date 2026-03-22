@@ -248,10 +248,6 @@ async function recoverPassword() {
     const email = document.getElementById('recoveryEmail').value.trim();
     if (!email) return showNotification("Please enter your email.");
 
-    async function recoverPassword() {
-    const email = document.getElementById('recoveryEmail').value.trim();
-    if (!email) return showNotification("Please enter your email.");
-
     try {
         const response = await fetch(`${API_URL}/auth/recover`, {
             method: 'POST',
@@ -272,12 +268,11 @@ async function recoverPassword() {
     }
 }
 
-    
-// Notification System
 // Notification System
 function showNotification(message) {
     const container = document.getElementById('notification-container');
-    if (!container) return; // Safety check
+    if (!container) return; 
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerText = message;
@@ -288,4 +283,3 @@ function showNotification(message) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-
