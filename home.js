@@ -232,7 +232,6 @@ async function loadUserData() {
     if (!token) return window.location.href = 'index.html';
 
     try {
-        // We use the Token to tell the Server: "Give me the data for whoever owns this token"
         const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -241,17 +240,22 @@ async function loadUserData() {
 
         const cloudData = await response.json(); 
         
-        // --- THE FIX ---
-        data = cloudData;       // Replace the "Loading..." object with real Cloud data
-        isDataReady = true;     // Now it is safe to allow syncToCloud()
+        data = cloudData;       
+        isDataReady = true;     
         
-        // Update Sidebar UI directly from the Cloud response
+        // ✅ FIX: Update Sidebar UI directly from the Cloud response
         const displayElement = document.getElementById('username-display');
         const initialElement = document.getElementById('user-initial');
 
-        if (displayElement) displayElement.innerText = data.username;
-        if (initialElement) initialElement.innerText = data.username[0].toUpperCase();
+        if (displayElement && data.username) {
+            displayElement.innerText = data.username;
+        }
         
+        if (initialElement && data.username) {
+            initialElement.innerText = data.username[0].toUpperCase();
+        }
+        
+        // Refresh the progress ring and stats
         refreshHome();
         checkBadges(); 
 
