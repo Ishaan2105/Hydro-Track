@@ -1,4 +1,4 @@
-const API_URL = "https://hydrotrack-api.onrender.com/api";
+const API_URL = "https://hydrotrack-api.onrender.com";
 
 const rainContainer = document.getElementById('rain-container');
 const rippleContainer = document.getElementById('ripple-container');
