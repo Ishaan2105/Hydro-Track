@@ -206,30 +206,26 @@ function loadReminders() {
 
     list.innerHTML = "";
 
-    // 1. Filter the array to find all reminders where daily is true
-    const dailyReminders = data.reminders.filter(rem => rem.daily === true);
+    // FIX: Filter by 'active' (the checkbox) rather than 'daily' (the toggle)
+    const activeReminders = data.reminders.filter(rem => rem.active === true);
 
-    // 2. If no daily reminders exist, show the empty state
-    if (dailyReminders.length === 0) {
-        list.innerHTML = `<p style="text-align:center; opacity:0.5; padding:20px;">No daily reminders configured.</p>`;
+    if (activeReminders.length === 0) {
+        list.innerHTML = `<p style="text-align:center; opacity:0.5; padding:20px;">No active reminders.</p>`;
         return;
     }
 
-    // 3. Render each daily reminder from the data array
-    dailyReminders.forEach(rem => {
+    activeReminders.forEach(rem => {
         const reminderDiv = document.createElement('div');
         reminderDiv.className = 'reminder-item';
         
-        // Define colors and labels based on the active status
-        const statusColor = rem.active ? '#1565c0' : '#888';
-        const statusText = rem.active ? 'ACTIVE' : 'PAUSED';
+        // Show whether it is a Daily or One-Time (Once) alarm
+        const typeLabel = rem.daily ? '🔁 DAILY' : '⏱️ ONCE';
 
-        // Displaying both the Bell icon and the specific Time
         reminderDiv.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span class="time-tag">🔔 ${rem.time}</span> 
-                <span style="font-size:0.7rem; color:${statusColor}; font-weight:bold; background:#f0f4f8; padding:2px 8px; border-radius:5px;">
-                    🔁 DAILY • ${statusText}
+                <span style="font-size:0.7rem; color:#1565c0; font-weight:bold; background:#f0f4f8; padding:2px 8px; border-radius:5px;">
+                    ${typeLabel} • ACTIVE
                 </span>
             </div>
             <span class="msg-tag">"${getRandomReminder()}"</span>
