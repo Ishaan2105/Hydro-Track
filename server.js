@@ -236,9 +236,9 @@ const path = require('path');
 // 1. Serve static files (Assuming your HTML files are in the root or a 'public' folder)
 app.use(express.static(__dirname)); 
 
-// 2. Route all non-API requests to index (1).html
+// 2. Route all non-API requests to index.html
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index (1).html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 
