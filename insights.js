@@ -1,5 +1,7 @@
-const API_URL = "https://hydro-track.onrender.com"; 
-const token = localStorage.getItem('token');
+if (typeof API_URL === 'undefined') {
+    window.API_URL = "https://hydro-track.onrender.com";
+}
+var token = localStorage.getItem('token');
 
 let isDataReady = false; 
 let data = {
