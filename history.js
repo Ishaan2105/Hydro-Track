@@ -23,6 +23,20 @@ const todayISO = today.getFullYear() + '-' +
 
 var selectedDate = todayISO;
 
+async function syncToCloud() {
+    if (!isDataReady) return; 
+
+    try {
+        await fetch(`${API_URL}/api/user/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, userData: data })
+        });
+    } catch (err) {
+        console.error("Cloud sync failed", err);
+    }
+}
+
 
 window.addEventListener('DOMContentLoaded', () => {
 
