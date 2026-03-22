@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: "https://your-actual-frontend-url.onrender.com" // Update this after deploying frontend
+    origin: "https://Ishaan2105.github.io/Hydro-Track" // Update this after deploying frontend
 }));
 
 // --- 1. MONGODB CONNECTION ---
