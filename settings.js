@@ -389,7 +389,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     // We 'await' this so the rest of the code has the user's actual reminders
     await loadUserData(); 
 
-    // ✅ NEW: Sync post-meal toggle from cloud (from Code 2)
+    // ✅ FIX: Update Sidebar Profile with Cloud Data
+    if (data && data.username) {
+        const nameDisplay = document.getElementById('username-display');
+        const initialDisplay = document.getElementById('user-initial');
+        
+        if (nameDisplay) {
+            nameDisplay.innerText = data.username;
+        }
+        if (initialDisplay) {
+            initialDisplay.innerText = data.username[0].toUpperCase();
+        }
+    }
+
+    // ✅ Sync post-meal toggle from cloud
     const postMealToggle = document.getElementById('post-meal-toggle');
     if (postMealToggle) {
         postMealToggle.checked = data.postMealEnabled || false;
