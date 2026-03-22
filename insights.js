@@ -1,17 +1,25 @@
 if (typeof API_URL === 'undefined') {
     window.API_URL = "https://hydro-track.onrender.com";
 }
-var token = localStorage.getItem('token');
+if (typeof token === 'undefined') {
+    window.token = localStorage.getItem('token');
+}
 
-// let isDataReady = false; 
-let data = {
-    username: "Loading...",
-    goal: 2500,
-    intake: 0,
-    history: {},
-    mealTimes: { bfast: "", lunch: "", dinner: "" }
-};
+// Use 'var' or check 'window' to allow sharing across scripts
+if (typeof isDataReady === 'undefined') {
+    window.isDataReady = false; 
+}
 
+// Merge or initialize the cloud data object
+if (typeof data === 'undefined') {
+    window.data = {
+        username: "Loading...",
+        goal: 2500,
+        intake: 0,
+        history: {},
+        mealTimes: { bfast: "", lunch: "", dinner: "" }
+    };
+}
 window.addEventListener('DOMContentLoaded', () => {
     // START HERE: Fetch from Cloud FIRST
     loadCloudData();
@@ -46,40 +54,6 @@ function calculateHydration() {
     }
 }
 
-function renderMonthlyGrid() {
-    const container = document.getElementById('monthly-grid');
-    if (!container) return;
-
-    const history = data.history || {};
-    const goal = data.goal || 2500;
-    
-    container.innerHTML = "";
-    
-    // We generate a grid for the last 30 days
-    for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        
-        const entry = history[dateStr];
-        // Handling the new Object-based history format
-        const val = (entry && typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
-        
-        const square = document.createElement('div');
-        square.className = 'grid-square';
-        
-        // Visual feedback for mobile touch
-        if (val >= goal) square.style.background = "#1565c0"; // Goal Met
-        else if (val > 0) square.style.background = "#bbdefb"; // Partial
-        else square.style.background = "rgba(0,0,0,0.05)"; // No Data
-
-        square.addEventListener('touchstart', () => {
-            showToast(`${dateStr}: ${(val/1000).toFixed(1)}L`);
-        });
-        
-        container.appendChild(square);
-    }
-}
 
 function showToast(message) {
     const container = document.getElementById('toast-container') || createToastContainer();
@@ -106,19 +80,6 @@ function applyGoal() {
     showToast(`Goal updated: ${(data.goal / 1000).toFixed(1)} L`);
 }
 
-
-async function syncToCloud() {
-    try {
-        const response = await fetch(`${API_URL}/user/sync`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, userData: data })
-        });
-        if (!response.ok) throw new Error("Sync failed");
-    } catch (err) {
-        showToast("Cloud sync failed. Data saved locally.");
-    }
-}
 
 async function saveMealSchedule() {
     data.mealTimes = {
