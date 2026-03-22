@@ -274,16 +274,18 @@ async function recoverPassword() {
 
     
 // Notification System
+// Notification System
 function showNotification(message) {
     const container = document.getElementById('notification-container');
+    if (!container) return; // Safety check
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerText = message;
     container.appendChild(toast);
     
-    // Auto-remove after 3 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
