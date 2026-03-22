@@ -480,34 +480,6 @@ setInterval(() => {
 }, 60000);
 
 
-
-async function loadUserData() {
-    if (!token) return window.location.href = 'index.html';
-
-    try {
-        const response = await fetch(`${API_URL}/user/data`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!response.ok) throw new Error("Unauthorized");
-
-        // Overwrite local 'data' with the reset (or current) data from the Cloud
-        data = await response.json(); 
-        
-        // Update Sidebar and Progress Ring with fresh values
-        const displayElement = document.getElementById('username-display');
-        const initialElement = document.getElementById('user-initial');
-
-        if (displayElement) displayElement.innerText = data.username;
-        if (initialElement) initialElement.innerText = data.username[0].toUpperCase();
-        
-        refreshHome();
-        checkBadges(); 
-    } catch (err) {
-        showToast("Cloud connection failed.");
-    }
-}
-
 function checkAchievements() {
     const streak = calculateStreak();
     let newBadges = [...(data.badges || [])];
