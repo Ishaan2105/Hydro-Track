@@ -1,11 +1,11 @@
-// 1. Identify the specific user and create a unique storage key
-const activeUser = localStorage.getItem('currentUser') || "Guest";
+// 1. Only keep the Token (Required to ask the Cloud who you are)
 const token = localStorage.getItem('token'); 
 const API_URL = "https://hydro-track.onrender.com";
 
-// 2. Load Data for THIS specific user
+// 2. Initialize a "Waiting" state
+let isDataReady = false; // This prevents syncing until the Cloud data arrives
 let data = {
-    username: activeUser,
+    username: "Loading...",
     goal: 2500,
     intake: 0,
     streak: 0,
@@ -228,21 +228,24 @@ function updateTheme() {
     else b.classList.add('theme-night');
 }
 
-
 async function loadUserData() {
     if (!token) return window.location.href = 'index.html';
 
     try {
-        const response = await fetch(`${API_URL}/user/data`, {
+        // We use the Token to tell the Server: "Give me the data for whoever owns this token"
+        const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!response.ok) throw new Error("Unauthorized");
 
         const cloudData = await response.json(); 
-        data = cloudData; // Overwrites the blank object
         
-        // Update UI Elements
+        // --- THE FIX ---
+        data = cloudData;       // Replace the "Loading..." object with real Cloud data
+        isDataReady = true;     // Now it is safe to allow syncToCloud()
+        
+        // Update Sidebar UI directly from the Cloud response
         const displayElement = document.getElementById('username-display');
         const initialElement = document.getElementById('user-initial');
 
@@ -252,25 +255,23 @@ async function loadUserData() {
         refreshHome();
         checkBadges(); 
 
-        // --- CRITICAL ADDITION ---
-        return data; // Return the data so settings.js can "wait" for it
-        // -------------------------
-
     } catch (err) {
         console.error("Cloud connection failed:", err);
+        showToast("Error loading profile from Cloud.");
     }
 }
 
 async function syncToCloud() {
+    if (!isDataReady) return; 
+
     try {
-        await fetch(`${API_URL}/user/sync`, {
+        await fetch(`${API_URL}/api/user/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, userData: data })
         });
     } catch (err) {
         console.error("Cloud sync failed", err);
-        showToast("⚠️ Connection lost. Progress not saved to cloud.");
     }
 }
 
