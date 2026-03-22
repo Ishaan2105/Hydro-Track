@@ -8,13 +8,11 @@ const jwt = require('jsonwebtoken');
 const app = express();
 app.use(express.json());
 app.use(cors({
-    // Add your local Live Server address to the list
     origin: [
         "https://Ishaan2105.github.io", 
         "https://hydro-track.onrender.com", 
-        "http://127.0.0.1:5500", // Add this exact string from your error
-        "http://localhost:5500",
-        "http://localhost:3000"
+        "http://127.0.0.1:5500", // This matches your Live Server exactly
+        "http://localhost:5500"
     ]
 }));
 
