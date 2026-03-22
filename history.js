@@ -1,6 +1,6 @@
 // history.js
 
-const API_URL = "https://hydrotrack-api.onrender.com";
+const API_URL = "https://hydro-track.onrender.com";
 const token = localStorage.getItem('token'); 
 
 // 1. Identification (Use 'var' to prevent "already declared" errors if home.js is also loaded)
