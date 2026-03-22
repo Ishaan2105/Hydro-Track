@@ -8,12 +8,23 @@ const jwt = require('jsonwebtoken');
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: [
-        "https://Ishaan2105.github.io", 
-        "https://hydro-track.onrender.com", // This is your LIVE frontend
-        "http://127.0.0.1:5500",           // For local testing
-        "http://localhost:5500"
-    ]
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl) 
+        // or matches your specific domains
+        const allowedOrigins = [
+            "https://Ishaan2105.github.io", 
+            "https://hydro-track.onrender.com",
+            "http://127.0.0.1:5500",
+            "http://localhost:5500"
+        ];
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // --- 1. MONGODB CONNECTION ---
