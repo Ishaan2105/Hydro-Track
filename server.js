@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(cors({
     origin: [
         "https://Ishaan2105.github.io", 
-        "https://hydro-track.onrender.com", 
-        "http://127.0.0.1:5500", // This matches your Live Server exactly
+        "https://hydro-track.onrender.com", // This is your LIVE frontend
+        "http://127.0.0.1:5500",           // For local testing
         "http://localhost:5500"
     ]
 }));
