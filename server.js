@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: "https://Ishaan2105.github.io/Hydro-Track" // Update this after deploying frontend
+    origin: ["https://Ishaan2105.github.io", "https://hydro-track.onrender.com", "http://localhost:3000"]
 }));
 
 // --- 1. MONGODB CONNECTION ---
@@ -221,6 +221,21 @@ app.post('/api/auth/recover', async (req, res) => {
         res.status(500).json({ error: "Failed to send recovery email. Is the server configured?" });
     }
 });
+
+
+
+
+
+const path = require('path');
+
+// 1. Serve static files (Assuming your HTML files are in the root or a 'public' folder)
+app.use(express.static(__dirname)); 
+
+// 2. Route all non-API requests to index (1).html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index (1).html'));
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 HydroTrack Server live on port ${PORT}`));
