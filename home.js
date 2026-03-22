@@ -422,27 +422,6 @@ setInterval(() => {
 
 }, 60000);
 
-// Function to clear non-daily reminders
-function clearOneTimeReminders() {
-    const timeRows = document.querySelectorAll('.time-toggle-row');
-    let dataChanged = false;
-
-    timeRows.forEach(row => {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        const dailyToggle = row.querySelector('.daily-toggle');
-
-        if (checkbox.checked && !dailyToggle.checked) {
-            checkbox.checked = false;
-            dataChanged = true;
-        }
-    });
-
-    if (dataChanged) {
-        if (typeof loadReminders === 'function') loadReminders();
-        if (typeof syncToCloud === 'function') syncToCloud();
-    }
-}
-
 // Global Heartbeat: Every minute check for triggers AND resets
 setInterval(() => {
     const now = new Date();
@@ -450,8 +429,9 @@ setInterval(() => {
                         now.getMinutes().toString().padStart(2, '0');
 
     // --- 1. MIDNIGHT RESET ---
+    // Clears any "One-Time" toggles that might have been missed or added late
     if (currentTime === "00:00") {
-        clearOneTimeReminders();
+        if (typeof clearOneTimeReminders === 'function') clearOneTimeReminders();
     }
 
     // --- 2. NOTIFICATION TRIGGER ---
@@ -461,34 +441,37 @@ setInterval(() => {
         const dailyToggle = row.querySelector('.daily-toggle');
         const alarmTime = checkbox.value;
 
-        if (checkbox.checked && alarmTime === currentTime) {
+        // Find the index early to use in our safety check
+        const reminderIndex = data.reminders.findIndex(r => r.time === alarmTime);
+
+        // UPDATED IF STATEMENT: Checks time, checkbox, AND cloud-state status
+        if (checkbox.checked && alarmTime === currentTime && data.reminders[reminderIndex]?.active !== false) {
+            
             // Pull a unique message from your dataset
             const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to hydrate!"; 
             
-            // Show the in-app toast notification
+            // Show the system notification
             if (typeof sendSystemNotification === 'function') {
                 sendSystemNotification("Hydration Reminder", `🔔 ${alarmTime}: ${randomMsg}`);
             }
 
             // If it's a "Once" alarm, turn it off immediately after notifying
             if (!dailyToggle.checked) {
-                // 1. Find the reminder in your cloud-synced data object and turn it off
-                const reminderIndex = data.reminders.findIndex(r => r.time === alarmTime);
+                // 1. Update the cloud-synced data object
                 if (reminderIndex !== -1) {
                     data.reminders[reminderIndex].active = false;
                 }
             
                 // 2. Update the UI Checkbox
-                checkbox.checked = false;
+                checkbox.checked = false; 
             
-                // 3. Refresh lists and Push to MongoDB
+                // 3. Refresh summary lists and Push update to MongoDB
                 if (typeof loadReminders === 'function') loadReminders();
                 if (typeof syncToCloud === 'function') syncToCloud();
             }
         }
     });
 }, 60000);
-
 
 function checkAchievements() {
     const streak = calculateStreak();
