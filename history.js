@@ -309,15 +309,20 @@ async function loadHistoryData() {
         
         const cloudData = await response.json();
         data = cloudData; 
-        isDataReady = true; // Mark as ready
+        isDataReady = true; 
         
-        // Update Sidebar UI
+        // ✅ FIX: Manually update Sidebar UI
         const userDisplay = document.getElementById('username-display');
         const avatar = document.getElementById('user-initial');
-        if (userDisplay) userDisplay.innerText = data.username;
-        if (avatar) avatar.innerText = data.username[0].toUpperCase();
+        
+        if (userDisplay && data.username) {
+            userDisplay.innerText = data.username;
+        }
+        if (avatar && data.username) {
+            avatar.innerText = data.username[0].toUpperCase();
+        }
 
-        // Run UI updates now that data is here
+        // Run UI updates for the history stats
         updateOverallStats();
         loadDateStats();
     } catch (err) {
