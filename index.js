@@ -1,3 +1,5 @@
+index.js
+
 const API_URL = "https://hydrotrack-api.onrender.com";
 
 const rainContainer = document.getElementById('rain-container');
@@ -151,7 +153,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     const password = document.getElementById('regPass').value;
 
     try {
-        const response = await fetch(`${API_URL}`, {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
@@ -179,7 +181,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     try {
         // UPDATED: Now points to your live Render backend
-        const response = await fetch(`${API_URL}`, {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -222,7 +224,7 @@ async function recoverPassword() {
     if (!email) return showNotification("Please enter your email.");
 
     try {
-        const response = await fetch(`${API_URL}`, {
+        const response = await fetch(`${API_URL}/api/auth/recover`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
