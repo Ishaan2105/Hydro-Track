@@ -1,5 +1,15 @@
-// insights.js
-const API_URL = "https://hydrotrack-api.onrender.com";
+const API_URL = "https://hydro-track.onrender.com"; 
+const token = localStorage.getItem('token');
+
+let isDataReady = false; 
+let data = {
+    username: "Loading...",
+    goal: 2500,
+    intake: 0,
+    history: {},
+    mealTimes: { bfast: "", lunch: "", dinner: "" }
+};
+
 window.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================================
@@ -108,8 +118,6 @@ function applyGoal() {
     showToast(`New goal set: ${(data.goal / 1000).toFixed(1)} L`);
 }
 
-// const API_URL = "http://localhost:5000/api";
-// const token = localStorage.getItem('token');
 
 async function syncToCloud() {
     try {
@@ -136,15 +144,42 @@ async function saveMealSchedule() {
     showToast("Meal schedule synced to cloud!");
 }
 
-function loadMealTimes() {
-    if (data.mealTimes) {
-        document.getElementById('bfast-time').value = data.mealTimes.bfast || "";
-        document.getElementById('lunch-time').value = data.mealTimes.lunch || "";
-        document.getElementById('dinner-time').value = data.mealTimes.dinner || "";
+async function loadCloudData() {
+    if (!token) return window.location.href = 'index.html';
+    try {
+        const response = await fetch(`${API_URL}/api/user/data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const cloudData = await response.json();
+        data = cloudData;
+        isDataReady = true;
+
+        // 2. ONLY NOW run the UI functions
+        loadMealTimes();
+        renderRealTimeTrend();
+        
+        // Update Sidebar
+        document.getElementById('username-display').innerText = data.username;
+        document.getElementById('user-initial').innerText = data.username[0].toUpperCase();
+    } catch (err) {
+        showToast("Cloud fetch failed.");
     }
 }
 
-// insights.js updates
+async function syncToCloud() {
+    if (!isDataReady) return; // Prevent overwriting with blank data
+
+    try {
+        const response = await fetch(`${API_URL}/api/user/sync`, { // Added /api/
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, userData: data })
+        });
+        if (!response.ok) throw new Error("Sync failed");
+    } catch (err) {
+        showToast("Cloud sync failed.");
+    }
+}
 
 function generateMockGraph() {
     const container = document.getElementById('trend-graph');
@@ -215,35 +250,36 @@ async function renderRealTimeTrend() {
     const graphSection = document.querySelector('.graph-section');
     if (!container) return;
 
-    // 1. FRESH DATA FETCH (Critical for Real-Time Accuracy)
-    // This pulls the most recent intake and history from MongoDB
-    if (typeof token !== 'undefined' && token) {
+    // 1. FRESH DATA FETCH (Now using the correct /api/ path)
+    if (token) {
         try {
-            const response = await fetch(`${API_URL}/user/data`, {
+            const response = await fetch(`${API_URL}/api/user/data`, { // Added /api/
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
                 const cloudData = await response.json();
-                // Update the global data object with latest cloud results
-                window.data = cloudData; 
+                
+                // CRITICAL: Overwrite the local 'data' object, NOT window.data
+                data = cloudData; 
+                isDataReady = true; 
             }
         } catch (err) {
-            console.warn("Graph update: Cloud sync failed, using local fallback.", err);
+            console.warn("Graph update: Cloud fetch failed.", err);
+            return; // Stop if we can't get data to prevent showing wrong stats
         }
     }
 
-    // 2. Force visibility
+    // 2. Force visibility if we have data
     if (graphSection) graphSection.style.display = 'block';
 
     const history = data.history || {};
-    // Use local ISO date to match server storage format
     const todayISO = new Date().toISOString().split('T')[0];
     const dailyGoal = data.goal || 2500;
     
     let last7DaysData = [];
     let totalPct = 0;
 
-    // 3. Collect 7 days of data
+    // 3. Collect 7 days of data from the Cloud object
     for (let i = 6; i >= 0; i--) {
         let d = new Date();
         d.setDate(d.getDate() - i);
@@ -251,38 +287,37 @@ async function renderRealTimeTrend() {
         
         let val = 0;
         if (dateStr === todayISO) {
-            // Pull the latest live intake
             val = Number(data.intake) || 0;
         } else {
             const entry = history[dateStr];
-            // Access 'total' from MongoDB Map structure or fallback to legacy Number
+            // Accessing the object structure { total, logs } used in your server
             val = (entry && typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
         }
-        last7DaysData.push(val);
+        last7DaysData.push({ val, date: dateStr }); // Store date for the tooltip
         totalPct += Math.min(100, (val / dailyGoal) * 100);
     }
 
     // 4. Render Bars
     container.innerHTML = "";
-    const maxVal = Math.max(...last7DaysData, dailyGoal, 1000); 
+    const maxVal = Math.max(...last7DaysData.map(d => d.val), dailyGoal, 1000); 
 
-    last7DaysData.forEach((val, index) => {
+    last7DaysData.forEach((item, index) => {
         const bar = document.createElement('div');
         bar.className = 'bar';
         
-        const heightPct = (val / maxVal) * 100;
-        const displayVal = (val / 1000).toFixed(1) + "L";
+        const heightPct = (item.val / maxVal) * 100;
+        const displayVal = (item.val / 1000).toFixed(1) + "L";
         
         bar.setAttribute('data-value', displayVal);
         
-        // Tooltip interaction
+        // Tooltip interaction using the correct date for each bar
         bar.addEventListener('touchstart', () => {
             if (typeof showToast === 'function') {
-                showToast(`Date: ${dateStr} | ${displayVal}`);
+                showToast(`${item.date}: ${displayVal}`);
             }
         }, { passive: true });
 
-        // Staggered animation for visual polish
+        // Animation
         setTimeout(() => {
             bar.style.height = heightPct + "%";
         }, 100 * index);
@@ -290,7 +325,7 @@ async function renderRealTimeTrend() {
         container.appendChild(bar);
     });
 
-    // 5. Update Weekly Review
+    // 5. Update Weekly Review based on 100% Cloud Data
     if (typeof updateWeeklyReview === 'function') {
         updateWeeklyReview(totalPct / 7);
     }
