@@ -151,7 +151,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     const password = document.getElementById('regPass').value;
 
     try {
-        const response = await fetch(`${API_URL}/api/auth/register`, {
+        const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
@@ -179,7 +179,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     try {
         // UPDATED: Now points to your live Render backend
-        const response = await fetch(`${API_URL}/api/auth/login`, {
+        const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -222,7 +222,7 @@ async function recoverPassword() {
     if (!email) return showNotification("Please enter your email.");
 
     try {
-        const response = await fetch(`${API_URL}/api/auth/recover`, {
+        const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
