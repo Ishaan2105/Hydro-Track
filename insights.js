@@ -11,18 +11,8 @@ let data = {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
-
-    /* ============================================================
-       1. LOAD MEAL TIMES
-    ============================================================ */
-    loadMealTimes();
-
-    /* ============================================================
-       2. RENDER GRAPH (REAL-TIME VERSION)
-       (Replaces old generateMockGraph)
-    ============================================================ */
-    renderRealTimeTrend();
-
+    // START HERE: Fetch from Cloud FIRST
+    loadCloudData();
 });
 
 function calculateHydration() {
@@ -31,7 +21,6 @@ function calculateHydration() {
     const resultBox = document.getElementById('calc-result');
     const displayLiters = document.getElementById('suggested-liters');
 
-    // Validation to prevent the error if elements are missing
     if (!weightInput || !heightInput) return;
 
     const w = parseFloat(weightInput.value);
@@ -47,12 +36,11 @@ function calculateHydration() {
             displayLiters.innerText = suggestion.toFixed(1) + " L";
         }
         
-        // Store for applyGoal()
-        window.tempGoal = Math.round(suggestion * 1000); 
+        // FIX: Store directly in your 'data' object instead of window
+        // This keeps the temporary value tied to your app state
+        data.tempGoal = Math.round(suggestion * 1000); 
     } else {
-        if (typeof showToast === 'function') {
-            showToast("❌ Enter valid weight and height.");
-        }
+        showToast("❌ Enter valid weight and height.");
     }
 }
 
@@ -97,10 +85,7 @@ function showToast(message) {
     toast.className = 'toast-msg';
     toast.innerText = message;
     container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 3000);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
 }
 
 function createToastContainer() {
@@ -113,9 +98,10 @@ function createToastContainer() {
 
 
 function applyGoal() {
-    data.goal = window.tempGoal;
+    if (!data.tempGoal) return;
+    data.goal = data.tempGoal;
     syncToCloud(); 
-    showToast(`New goal set: ${(data.goal / 1000).toFixed(1)} L`);
+    showToast(`Goal updated: ${(data.goal / 1000).toFixed(1)} L`);
 }
 
 
@@ -150,19 +136,23 @@ async function loadCloudData() {
         const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        if (!response.ok) throw new Error("Unauthorized");
+        
         const cloudData = await response.json();
         data = cloudData;
         isDataReady = true;
 
-        // 2. ONLY NOW run the UI functions
+        // NOW populate the UI
         loadMealTimes();
         renderRealTimeTrend();
+        renderMonthlyGrid();
         
         // Update Sidebar
         document.getElementById('username-display').innerText = data.username;
         document.getElementById('user-initial').innerText = data.username[0].toUpperCase();
     } catch (err) {
-        showToast("Cloud fetch failed.");
+        showToast("Cloud fetch failed. Check connection.");
     }
 }
 
@@ -283,17 +273,20 @@ async function renderRealTimeTrend() {
     for (let i = 6; i >= 0; i--) {
         let d = new Date();
         d.setDate(d.getDate() - i);
-        let dateStr = d.toISOString().split('T')[0];
+        
+        // Manual construction ensures it matches your server's lastLogDate format
+        let dateStr = d.getFullYear() + '-' + 
+                      String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(d.getDate()).padStart(2, '0');
         
         let val = 0;
         if (dateStr === todayISO) {
             val = Number(data.intake) || 0;
         } else {
             const entry = history[dateStr];
-            // Accessing the object structure { total, logs } used in your server
             val = (entry && typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
         }
-        last7DaysData.push({ val, date: dateStr }); // Store date for the tooltip
+        last7DaysData.push({ val, date: dateStr });
         totalPct += Math.min(100, (val / dailyGoal) * 100);
     }
 
@@ -342,53 +335,57 @@ function formatTo12Hr(time24) {
 
 function renderMonthlyGrid() {
     const container = document.getElementById('monthly-grid');
-    if (!container) return;
+    if (!container || !isDataReady) return; // Ensure data is actually loaded from cloud
 
     const history = data.history || {};
     const goal = data.goal || 2500;
     
     container.innerHTML = "";
     
-    // Create a 30-day view
     for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+
+        // FIX: Build YYYY-MM-DD manually to match your database keys exactly
+        const dateStr = d.getFullYear() + '-' + 
+                         String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(d.getDate()).padStart(2, '0');
         
         const entry = history[dateStr];
         const val = (entry && typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
         
-        const daySquare = document.createElement('div');
-        daySquare.className = 'month-day';
+        const square = document.createElement('div');
+        square.className = 'grid-square';
         
-        // Color based on success
-        if (val >= goal) daySquare.classList.add('goal-met');
-        else if (val > 0) daySquare.classList.add('partial');
-        
-        daySquare.addEventListener('touchstart', () => {
+        // Visual feedback based on goal
+        if (val >= goal) square.style.background = "#1565c0"; 
+        else if (val > 0) square.style.background = "#bbdefb"; 
+        else square.style.background = "rgba(0,0,0,0.05)"; 
+
+        square.addEventListener('touchstart', () => {
             showToast(`${dateStr}: ${(val/1000).toFixed(1)}L`);
         });
         
-        container.appendChild(daySquare);
+        container.appendChild(square);
     }
 }
 
-function saveMealSchedule() {
+async function saveMealSchedule() {
     data.mealTimes = {
         bfast: document.getElementById('bfast-time').value,
         lunch: document.getElementById('lunch-time').value,
         dinner: document.getElementById('dinner-time').value
     };   
-    syncToCloud();
+    await syncToCloud();
     updateMealDisplay();
-    showNotification("Meal schedule updated!");
+    showToast("Meal schedule synced to cloud!");
 }
 
 function updateMealDisplay() {
     if (data.mealTimes) {
-        document.getElementById('bfast-display').innerText = formatTo12Hr(data.mealTimes.bfast);
-        document.getElementById('lunch-display').innerText = formatTo12Hr(data.mealTimes.lunch);
-        document.getElementById('dinner-display').innerText = formatTo12Hr(data.mealTimes.dinner);
+        document.getElementById('bfast-display').innerText = formatTo12Hr(data.mealTimes.bfast) || "--:-- --";
+        document.getElementById('lunch-display').innerText = formatTo12Hr(data.mealTimes.lunch) || "--:-- --";
+        document.getElementById('dinner-display').innerText = formatTo12Hr(data.mealTimes.dinner) || "--:-- --";
     }
 }
 
