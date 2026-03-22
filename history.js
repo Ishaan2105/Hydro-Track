@@ -1,52 +1,37 @@
-// history.js
-
 const API_URL = "https://hydro-track.onrender.com";
+
+// 1. The ONLY thing we keep in the browser is the Token (The Key to the Cloud)
 const token = localStorage.getItem('token'); 
 
-// 1. Identification (Use 'var' to prevent "already declared" errors if home.js is also loaded)
-var activeUser = localStorage.getItem('currentUser') || "Guest";
-var storageKey = `userData_${activeUser}`;
-var notesKey = `userNotes_${activeUser}`; // CRITICAL: Added this so notes work
-
-// 2. Load the actual live data
-// We check if 'data' already exists (from home.js); if not, we fetch it.
-var data = window.data || JSON.parse(localStorage.getItem(storageKey)) || {
-    username: activeUser,
+// 2. Initial "Waiting" State
+// We remove storageKey and notesKey because the Server already knows who you are from the token.
+let isDataReady = false; 
+let data = {
+    username: "Loading...",
     goal: 2500,
     intake: 0,
     history: {},
-    currentLogs: []
+    currentLogs: [],
+    notes: {} 
 };
 
-// let selectedDate = new Date().toISOString().split('T')[0];
-
-// Building YYYY-MM-DD manually to avoid UTC timezone shifts
+// 3. Date Logic (Local time for accurate calendar display)
 const today = new Date();
 const todayISO = today.getFullYear() + '-' + 
                  String(today.getMonth() + 1).padStart(2, '0') + '-' + 
                  String(today.getDate()).padStart(2, '0');
 
-// Default global selection to today's local date
-var selectedDate = todayISO; 
+var selectedDate = todayISO;
+
 
 window.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================================
-       2. USER PROFILE SETUP
+       1. THEME & PICKER SETUP
     ============================================================ */
-    const userDisplay = document.getElementById('username-display');
-    const avatar = document.getElementById('user-initial');
-    
-    if (userDisplay) {
-        userDisplay.innerText = data.username || activeUser;
-    }
-    if (avatar) {
-        avatar.innerText = (data.username || activeUser).charAt(0).toUpperCase();
-    }
+    // Apply time-of-day theme immediately
+    if (typeof updateTheme === 'function') updateTheme(); 
 
-    /* ============================================================
-       3. DATE PICKER SETUP (Today as Default)
-    ============================================================ */
     const picker = document.getElementById('calendar-picker');
     if (picker) {
         picker.value = todayISO;  // Force the input to show today
@@ -54,11 +39,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       4. INITIAL DATA LOAD
+       2. CLOUD DATA FETCH (Handles Profile & Stats)
     ============================================================ */
-    // Immediately populate the UI for the current day
-    updateOverallStats();
-    loadDateStats();     
+    // Instead of showing "Guest", we trigger the cloud fetch.
+    // This function will update the sidebar and stats once the data arrives.
+    loadHistoryData(); 
 });
 
 function toggleLogout() {
@@ -70,8 +55,12 @@ function toggleLogout() {
 }
 
 function logout() {
-    localStorage.removeItem('currentUser'); // Clear session
-    window.location.href = 'index.html';    // Redirect to login
+    // This wipes the token and any other local traces 
+    // to ensure the next session starts 100% from the Cloud.
+    localStorage.clear(); 
+    
+    // Redirect to the entry page
+    window.location.href = 'index.html';
 }
 
 
@@ -282,12 +271,14 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       8. LOAD NOTES
+           8. LOAD NOTES (Cloud-Synced)
     ============================================================ */
-    const savedNotes = JSON.parse(localStorage.getItem(notesKey)) || {};
+    // Pull notes from the 'data' object fetched from the cloud
+    const savedNotes = data.notes || {}; 
     const noteArea = document.getElementById('daily-note-area');
-
+    
     if (noteArea) {
+        // Access the note using the selected date as the key
         noteArea.value = savedNotes[selectedDate] || "";
     }
 }
@@ -296,46 +287,65 @@ async function loadHistoryData() {
     if (!token) return window.location.href = 'index.html';
 
     try {
-        const response = await fetch(`${API_URL}/user/data`, {
+        const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        if (!response.ok) throw new Error("Unauthorized");
+        
         const cloudData = await response.json();
-        
-        // Populate the global 'data' object with cloud results
         data = cloudData; 
+        isDataReady = true; // Mark as ready
         
-        // Trigger UI updates
+        // Update Sidebar UI
+        const userDisplay = document.getElementById('username-display');
+        const avatar = document.getElementById('user-initial');
+        if (userDisplay) userDisplay.innerText = data.username;
+        if (avatar) avatar.innerText = data.username[0].toUpperCase();
+
+        // Run UI updates now that data is here
         updateOverallStats();
         loadDateStats();
     } catch (err) {
+        console.error(err);
         showToast("Failed to fetch history from cloud.");
     }
 }
 
 function saveNote() {
     const noteArea = document.getElementById('daily-note-area');
-    if (!noteArea) return;
+    if (!noteArea || !isDataReady) return;
 
     const noteText = noteArea.value;
     
-    // Get the most current notes object from storage
-    let allNotes = JSON.parse(localStorage.getItem(notesKey)) || {};
+    // 1. Initialize the notes object if it doesn't exist in our cloud data
+    if (!data.notes) data.notes = {};
 
-    // Assign text to the currently selected date
-    allNotes[selectedDate] = noteText; 
+    // 2. Assign text to the currently selected date in the global object
+    data.notes[selectedDate] = noteText; 
 
-    // Save back to storage
-    localStorage.setItem(notesKey, JSON.stringify(allNotes));
+    // 3. Push the entire updated data object to MongoDB
+    syncToCloud();
     
-    showToast("Note saved for " + selectedDate + "!");
+    showToast("Note saved to Cloud for " + selectedDate + "!");
 }
 
 function deleteNote() {
-    if (confirm("Clear notes for " + selectedDate + "?")) {
-        let notes = JSON.parse(localStorage.getItem(notesKey)) || {};
-        delete notes[selectedDate];
-        localStorage.setItem(notesKey, JSON.stringify(notes));
+    if (!isDataReady) return;
+    
+    if (confirm("Clear Cloud notes for " + selectedDate + "?")) {
+        // 1. Remove the note from the global data object
+        if (data.notes && data.notes[selectedDate]) {
+            delete data.notes[selectedDate];
+        }
+        
+        // 2. Clear the UI
         document.getElementById('daily-note-area').value = "";
+        
+        // 3. Sync the deletion to the Cloud
+        syncToCloud();
+        
+        showToast("Note deleted from Cloud!");
     }
 }
 
