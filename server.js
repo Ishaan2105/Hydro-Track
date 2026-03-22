@@ -7,35 +7,16 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(express.json());
-// --- Replace your current app.use(cors(...)) with this ---
+
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps)
-        if (!origin) return callback(null, true);
-
-        const allowedOrigins = [
-            "https://ishaan2105.github.io", 
-            "https://hydro-track.onrender.com",
-            "http://127.0.0.1:5500",
-            "http://localhost:5500"
-        ];
-
-        // Clean the incoming origin to match our list
-        const cleanOrigin = origin.replace(/\/$/, "").toLowerCase();
-        const isAllowed = allowedOrigins.some(authOrigin => 
-            authOrigin.replace(/\/$/, "").toLowerCase() === cleanOrigin
-        );
-
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: "https://hydro-track.onrender.com", // This MUST match your frontend URL exactly
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
 }));
+
+// This line is CRITICAL. It answers the "preflight" check the browser is complaining about.
+app.options('*', cors());
 
 // --- 1. MONGODB CONNECTION ---
 mongoose.connect(process.env.MONGO_URI)
