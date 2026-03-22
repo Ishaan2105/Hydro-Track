@@ -9,21 +9,32 @@ const app = express();
 app.use(express.json());
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl) 
-        // or matches your specific domains
+        // 1. Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
         const allowedOrigins = [
-            "https://Ishaan2105.github.io", 
+            "https://ishaan2105.github.io", 
             "https://hydro-track.onrender.com",
             "http://127.0.0.1:5500",
             "http://localhost:5500"
         ];
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+
+        // 2. Check if the origin (lowercased) is in our allowed list
+        // Note: We use .replace to remove any trailing slashes for a cleaner check
+        const cleanOrigin = origin.replace(/\/$/, "").toLowerCase();
+        const isAllowed = allowedOrigins.some(authOrigin => 
+            authOrigin.replace(/\/$/, "").toLowerCase() === cleanOrigin
+        );
+
+        if (isAllowed) {
             callback(null, true);
         } else {
+            console.log("❌ Blocked by CORS:", origin); // This helps you see the "bad" URL in Render logs
             callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
