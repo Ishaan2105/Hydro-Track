@@ -156,57 +156,29 @@ function setNotifMode(mode) {
 
 async function saveGlobalGoal() {
     const goalInput = document.getElementById('goal-val');
+    if (!goalInput) return;
+
     const newGoalLiters = parseFloat(goalInput.value);
 
-    // 1. Validation for positive input
+    // 1. Validation
     if (newGoalLiters > 0) {
-        // Convert Liters to milliliters to match your MERN schema
-        const newGoalMl = newGoalLiters * 1000;
+        // Update the global data object (Cloud state)
+        // Convert Liters to milliliters for the MERN schema
+        data.goal = newGoalLiters * 1000; 
         
-        // Retrieve the JWT token for secure cloud communication
-        const token = localStorage.getItem('token'); 
+        // 2. Sync to MongoDB using the central function
+        // This avoids hardcoding URLs and redundant fetch blocks
+        await syncToCloud(); 
 
-        try {
-            // 2. Update local state so the UI (like progress rings) updates immediately
-            if (typeof data !== 'undefined') {
-                data.goal = newGoalMl;
-            }
-
-            // 3. Sync the updated goal to MongoDB via your existing API
-            const response = await fetch('https://hydrotrack-api.onrender.com/api/user/sync', { 
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({ 
-                    token: token, 
-                    userData: data 
-                })
-            });
-
-            if (response.ok) {
-                // 4. Mobile-friendly in-page notification instead of a popup
-                showToast(`🎯 Target updated to ${newGoalLiters}L!`);
-                
-                // 5. Short delay before navigating so the user sees the confirmation toast
-                setTimeout(() => {
-                    window.location.href = 'home.html';
-                }, 1200);
-            } else {
-                showToast("❌ Failed to sync to the cloud.");
-            }
-        } catch (err) {
-            console.error("Cloud Error:", err);
-            showToast("❌ Connection error. Is the server running?");
-        }
+        showToast(`🎯 Target updated to ${newGoalLiters}L!`);
+        
+        // 3. Optional: Redirect after cloud confirmation
+        setTimeout(() => {
+            window.location.href = 'home.html';
+        }, 1200);
     } else {
         showToast("❌ Please enter a valid number (e.g., 2.5)");
     }
-}
-
-function togglePass(id) {
-    const el = document.getElementById(id);
-    el.type = el.type === 'password' ? 'text' : 'password';
 }
 
 
