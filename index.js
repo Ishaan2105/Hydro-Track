@@ -179,7 +179,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     try {
         // UPDATED: Now points to your live Render backend
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
