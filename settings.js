@@ -173,7 +173,7 @@ async function saveGlobalGoal() {
             }
 
             // 3. Sync the updated goal to MongoDB via your existing API
-            const response = await fetch('http://localhost:5000/api/user/sync', {
+            const response = await fetch('https://hydrotrack-api.onrender.com/api/user/sync', { 
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json' 
