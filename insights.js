@@ -3,7 +3,7 @@ if (typeof API_URL === 'undefined') {
 }
 var token = localStorage.getItem('token');
 
-let isDataReady = false; 
+// let isDataReady = false; 
 let data = {
     username: "Loading...",
     goal: 2500,
