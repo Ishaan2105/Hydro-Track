@@ -388,6 +388,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadUserData(); 
 
     // ✅ FIX 1: Sidebar Profile Sync
+    // Only update if isDataReady is true to prevent using placeholder values
     if (isDataReady && data.username) {
         const nameDisplay = document.getElementById('username-display');
         const initialDisplay = document.getElementById('user-initial');
@@ -398,14 +399,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // ✅ FIX 2: Strict Post-Meal Toggle Sync
     const postMealToggle = document.getElementById('post-meal-toggle');
-    if (postMealToggle && isDataReady) {
-        // Specifically check for the boolean 'true' to avoid undefined resets
+    if (postMealToggle) {
+        // Only check the box if the cloud data explicitly says 'true'
         postMealToggle.checked = (data.postMealEnabled === true);
     }
 
     // 3. Goal Input Initialization
     const goalInput = document.getElementById('goal-val');
     if (goalInput && data.goal) {
+        // Convert ml from MongoDB back to Liters for the input field
         goalInput.value = (data.goal / 1000).toFixed(1); 
     }
 
@@ -423,6 +425,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 5. Render the UI
+    // This populates the list of reminders and the summary
     renderCloudReminders();
 });
 
