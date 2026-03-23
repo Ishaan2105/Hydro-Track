@@ -319,23 +319,21 @@ async function updateReminderType(index, isDaily) {
 async function togglePostMeal() {
     const toggle = document.getElementById('post-meal-toggle');
     
-    // Check if meal times exist in our cloud data
+    // Safety check for meal times
     const meals = data.mealTimes || {};
     const isComplete = meals.bfast && meals.lunch && meals.dinner;
 
-    if (toggle.checked) {
-        if (!isComplete) {
-            // Prevent the toggle from staying on
-            toggle.checked = false;
-            showToast("⚠️ Please set Breakfast, Lunch, and Dinner times in Insights first!");
-            return;
-        }
-        showToast("🥗 Post-meal reminders active (30m delay)!");
+    if (toggle.checked && !isComplete) {
+        toggle.checked = false;
+        showToast("⚠️ Please set Meal times in Insights first!");
+        return;
     }
 
-    // Save the preference to the cloud
-    data.postMealEnabled = toggle.checked;
+    // ✅ CRITICAL: Update the data object so syncToCloud sends the right value
+    data.postMealEnabled = toggle.checked; 
     await syncToCloud();
+    
+    showToast(data.postMealEnabled ? "🥗 Reminders Active!" : "Notifications Disabled");
 }
 
 function renderCloudReminders() {
@@ -386,26 +384,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     setNotifMode('specific');
 
     // 2. Fetch Fresh Data from MongoDB
-    // We 'await' this so the rest of the code has the user's actual reminders
+    // We 'await' this so the 'data' object is fully populated before we touch the UI
     await loadUserData(); 
 
-    // ✅ FIX: Update Sidebar Profile with Cloud Data
+    // ✅ FIX 1: Update Sidebar Profile with Cloud Data
     if (data && data.username) {
         const nameDisplay = document.getElementById('username-display');
         const initialDisplay = document.getElementById('user-initial');
         
-        if (nameDisplay) {
-            nameDisplay.innerText = data.username;
-        }
-        if (initialDisplay) {
-            initialDisplay.innerText = data.username[0].toUpperCase();
-        }
+        if (nameDisplay) nameDisplay.innerText = data.username;
+        if (initialDisplay) initialDisplay.innerText = data.username[0].toUpperCase();
     }
 
-    // ✅ Sync post-meal toggle from cloud
+    // ✅ FIX 2: Sync Post-Meal Toggle (Ensures it stays ON if saved in Cloud)
     const postMealToggle = document.getElementById('post-meal-toggle');
     if (postMealToggle) {
-        postMealToggle.checked = data.postMealEnabled || false;
+        // Use a direct boolean check from the cloud data
+        postMealToggle.checked = (data.postMealEnabled === true);
     }
 
     // 3. Goal Input Initialization
@@ -424,7 +419,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         ];
 
         // Save these defaults to the cloud so they persist
-        await syncToCloud();
+        await syncToCloud(); 
     }
 
     // 5. Render the UI
