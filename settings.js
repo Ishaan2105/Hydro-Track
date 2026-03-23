@@ -495,3 +495,17 @@ function saveInterval() {
         showToast(`✅ Reminders set every ${intervalValue} minutes`);
     }
 }
+
+
+function togglePass(inputId) {
+    const input = document.getElementById(inputId);
+    const eye = event.currentTarget; // The span that was clicked
+
+    if (input.type === "password") {
+        input.type = "text";
+        eye.innerText = "🔒"; // Change icon to locked when visible
+    } else {
+        input.type = "password";
+        eye.innerText = "👁️"; // Change back to eye when hidden
+    }
+}
