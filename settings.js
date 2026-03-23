@@ -182,6 +182,38 @@ async function saveGlobalGoal() {
 }
 
 
+// TOGGLE POST MEAL
+async function togglePostMeal() {
+    const toggle = document.getElementById('post-meal-toggle');
+    
+    // 1. Safety check for meal times (sourced from Cloud data)
+    // We ensure bfast, lunch, and dinner all have values before allowing the toggle
+    const meals = data.mealTimes || {};
+    const isComplete = meals.bfast && meals.lunch && meals.dinner;
+
+    if (toggle.checked && !isComplete) {
+        // If times are missing, force the toggle back to OFF
+        toggle.checked = false;
+        showToast("⚠️ Please set Meal times in Insights first!");
+        return;
+    }
+
+    // 2. Update the global data object
+    // This is the variable that home.js reads to trigger notifications
+    data.postMealEnabled = toggle.checked; 
+
+    // 3. Sync the change to MongoDB
+    // We 'await' this so the toast only shows after a successful cloud save
+    await syncToCloud();
+    
+    // 4. Provide UI Feedback
+    if (data.postMealEnabled) {
+        showToast("🥗 Post-meal reminders are now ACTIVE!");
+    } else {
+        showToast("🌑 Post-meal reminders turned OFF");
+    }
+}
+
 
 function updatePassword() {
     const newP = document.getElementById('new-pass').value;
