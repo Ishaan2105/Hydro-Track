@@ -466,12 +466,19 @@ setInterval(() => {
                     data.reminders[reminderIndex].active = false;
                 }
             
-                // 2. Update the UI Checkbox
+                // 2. Update the UI Checkbox physically
                 checkbox.checked = false; 
             
-                // 3. Refresh summary lists and Push update to MongoDB
-                if (typeof loadReminders === 'function') loadReminders();
-                if (typeof syncToCloud === 'function') syncToCloud();
+                // 3. Refresh summary lists
+                if (typeof loadReminders === 'function') {
+                    loadReminders();
+                }
+            
+                // 4. ✅ FIX: Await the Cloud Sync to ensure MongoDB is updated
+                // This ensures that if you refresh the page, the "Once" alarm stays OFF.
+                if (typeof syncToCloud === 'function') {
+                    await syncToCloud();
+                }
             }
         }
     });
