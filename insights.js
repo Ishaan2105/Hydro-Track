@@ -82,15 +82,33 @@ function applyGoal() {
 
 
 async function saveMealSchedule() {
+    // 1. Capture the values from the time inputs
+    const bfast = document.getElementById('bfast-time').value;
+    const lunch = document.getElementById('lunch-time').value;
+    const dinner = document.getElementById('dinner-time').value;
+
+    // 2. VALIDATION: Ensure all three meals are set
+    // This prevents the 'togglePostMeal' safety check from failing later.
+    if (!bfast || !lunch || !dinner) {
+        showToast("⚠️ Please set times for all three meals.");
+        return;
+    }
+
+    // 3. Update the global data object
     data.mealTimes = {
-        bfast: document.getElementById('bfast-time').value,
-        lunch: document.getElementById('lunch-time').value,
-        dinner: document.getElementById('dinner-time').value
+        bfast: bfast,
+        lunch: lunch,
+        dinner: dinner
     };
     
-    await syncToCloud(); // Push meal times to MongoDB
+    // 4. Push to MongoDB
+    // We await this so the UI only updates after the cloud confirms the save.
+    await syncToCloud();
+    
+    // 5. Refresh the UI labels (e.g., "08:00 AM")
     updateMealDisplay();
-    showToast("Meal schedule synced to cloud!");
+    
+    showToast("🥗 Meal schedule synced to cloud!");
 }
 
 async function loadCloudData() {
