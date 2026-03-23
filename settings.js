@@ -384,12 +384,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     setNotifMode('specific');
 
     // 2. Fetch Fresh Data from MongoDB
-    // We 'await' this so the global 'data' object is fully populated
+    // We 'await' this so the 'data' object is fully populated before we touch the UI
     await loadUserData(); 
 
-    // ✅ FIX 1: Sidebar Profile Sync
-    // Only update if isDataReady is true to prevent using placeholder values
-    if (isDataReady && data.username) {
+    // ✅ FIX 1: Update Sidebar Profile with Cloud Data
+    if (data && data.username) {
         const nameDisplay = document.getElementById('username-display');
         const initialDisplay = document.getElementById('user-initial');
         
@@ -397,22 +396,21 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (initialDisplay) initialDisplay.innerText = data.username[0].toUpperCase();
     }
 
-    // ✅ FIX 2: Strict Post-Meal Toggle Sync
+    // ✅ FIX 2: Sync Post-Meal Toggle (Ensures it stays ON if saved in Cloud)
     const postMealToggle = document.getElementById('post-meal-toggle');
     if (postMealToggle) {
-        // Only check the box if the cloud data explicitly says 'true'
+        // Use a direct boolean check from the cloud data
         postMealToggle.checked = (data.postMealEnabled === true);
     }
 
     // 3. Goal Input Initialization
     const goalInput = document.getElementById('goal-val');
     if (goalInput && data.goal) {
-        // Convert ml from MongoDB back to Liters for the input field
         goalInput.value = (data.goal / 1000).toFixed(1); 
     }
 
     // 4. Handle Default Reminders (Only for first-time users)
-    if (isDataReady && (!data.reminders || data.reminders.length === 0)) {
+    if (!data.reminders || data.reminders.length === 0) {
         data.reminders = [
             { time: "07:00", daily: true, active: false },
             { time: "11:00", daily: true, active: false },
@@ -425,7 +423,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 5. Render the UI
-    // This populates the list of reminders and the summary
     renderCloudReminders();
 });
 
