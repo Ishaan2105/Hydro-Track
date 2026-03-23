@@ -466,19 +466,12 @@ setInterval(() => {
                     data.reminders[reminderIndex].active = false;
                 }
             
-                // 2. Update the UI Checkbox physically
+                // 2. Update the UI Checkbox
                 checkbox.checked = false; 
             
-                // 3. Refresh summary lists
-                if (typeof loadReminders === 'function') {
-                    loadReminders();
-                }
-            
-                // 4. ✅ FIX: Await the Cloud Sync to ensure MongoDB is updated
-                // This ensures that if you refresh the page, the "Once" alarm stays OFF.
-                if (typeof syncToCloud === 'function') {
-                    await syncToCloud();
-                }
+                // 3. Refresh summary lists and Push update to MongoDB
+                if (typeof loadReminders === 'function') loadReminders();
+                if (typeof syncToCloud === 'function') syncToCloud();
             }
         }
     });
@@ -545,10 +538,7 @@ function sendSystemNotification(title, message) {
             body: message,
             icon: 'icons/water-drop.png', // Path to your app icon
             badge: 'icons/badge.png',      // Small icon for the status bar
-            vibrate: [200, 100, 200],    // Vibration pattern for Android
-            tag: 'hydration-alert',    // Replaces old alerts so your panel isn't messy
-            renotify: true,            // Makes the phone vibrate/sound again even if same tag
-            requireInteraction: true
+            vibrate: [200, 100, 200]       // Vibration pattern for Android
         });
     } else if (Notification.permission !== "denied") {
         // Fallback if they haven't decided yet
