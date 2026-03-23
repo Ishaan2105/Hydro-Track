@@ -1,536 +1,716 @@
-// Dataset: 100 Unique Reminders
-const hydrationTexts = [
+// 1. Only keep the Token (Required to ask the Cloud who you are)
+const token = localStorage.getItem('token'); 
+const API_URL = "https://hydro-track.onrender.com";
 
-"💧 Time for a splash! Drink some water.",
-"Your brain is 75% water. Feed it!",
-"Stay hydrated, stay legendary.",
-"Glow from the inside out. Sip now!",
-"One glass now = More energy later.",
-"Feeling tired? Water is the cure.",
-"H2O is the way to go!",
-"Sip, sip, hooray!",
-"Don't wait for thirst, hydrate first.",
-"Water: The original energy drink.",
+// 2. Initialize a "Waiting" state
+let isDataReady = false; // This prevents syncing until the Cloud data arrives
+let data = {
+    username: "Loading...",
+    goal: 2500,
+    intake: 0,
+    streak: 0,
+    currentLogs: [],
+    history: {}
+};
 
-"Refill your energy with water.",
-"A sip a day keeps fatigue away.",
-"Hydrate your greatness.",
-"Clear mind starts with clear water.",
-"Drink now, thank yourself later.",
-"Hydration = Power.",
-"Stay fresh, drink water.",
-"Water fuels your hustle.",
-"Hydrate like a champion.",
-"Take a break, take a sip.",
+// 3. Initial & Profile Logic
+// window.addEventListener('DOMContentLoaded', () => {
 
-"Small sips, big benefits.",
-"Water today, wellness tomorrow.",
-"Be cool, drink water.",
-"Keep calm and hydrate.",
-"Hydrate your hustle.",
-"Drink up, level up.",
-"Water makes everything better.",
-"Hydrate and dominate.",
-"Fuel your focus with water.",
-"Drink water, stay unstoppable.",
+//     const today = new Date().toLocaleDateString();
 
-"Your body will thank you.",
-"Hydration is self-care.",
-"Hydrate to feel great.",
-"Drink water, boost power.",
-"A hydrated body is a happy body.",
-"Every sip counts.",
-"Refuel with water.",
-"Stay hydrated, stay sharp.",
-"Water keeps you winning.",
-"Sip smart, live well.",
+//     // ==========================================
+//     // DAILY RESET + HISTORY ARCHIVING
+//     // ==========================================
+//     if (data.lastLogDate !== today) {
 
-"Water is life.",
-"Drink water, stay awesome.",
-"Hydrate for success.",
-"Be a hydration hero.",
-"Keep the water flowing.",
-"Stay hydrated, stay focused.",
-"Water boosts your mood.",
-"Hydration is motivation.",
-"Drink water, feel better.",
-"Keep sipping greatness.",
+//     // 1. Prepare the data to be archived
+//     const historyEntry = {
+//         total: data.intake || 0,
+//         logs: data.currentLogs || []
+//     };
 
-"Hydration unlocks energy.",
-"Refresh your body.",
-"Hydrate to elevate.",
-"Your body needs water now.",
-"Sip your way to health.",
-"Stay cool with water.",
-"Hydration keeps you going.",
-"Drink water, power up.",
-"Stay hydrated, shine bright.",
-"Hydrate for clarity.",
+//     // 2. FIX: Convert lastLogDate to a clean YYYY-MM-DD string using local time
+//     if (data.lastLogDate) {
+//         const d = new Date(data.lastLogDate);
+//         const oldDateISO = d.getFullYear() + '-' + 
+//                            String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+//                            String(d.getDate()).padStart(2, '0');
 
-"Water keeps you balanced.",
-"Sip some happiness.",
-"Hydrate for strength.",
-"Drink water, feel alive.",
-"Stay hydrated, stay happy.",
-"Water fuels your day.",
-"Drink to think better.",
-"Hydrate your potential.",
-"Stay hydrated, stay winning.",
-"Refresh your mind.",
-
-"Drink water, conquer the day.",
-"Hydrate for productivity.",
-"Water keeps you energized.",
-"Hydration builds stamina.",
-"Drink water, stay vibrant.",
-"Hydrate your ambition.",
-"Stay refreshed with water.",
-"Hydrate to dominate.",
-"Drink water for clarity.",
-"Water powers performance.",
-
-"Hydrate your body and mind.",
-"Drink water for strength.",
-"Hydrate and shine.",
-"Water keeps your brain sharp.",
-"Stay refreshed, stay hydrated.",
-"Drink water and thrive.",
-"Hydrate for endurance.",
-"Water is pure energy.",
-"Stay hydrated, stay unstoppable.",
-"Drink water and glow.",
-
-"Hydration is your superpower.",
-"Drink water, feel unstoppable.",
-"Hydrate for greatness.",
-"Stay hydrated, stay powerful.",
-"Drink water and succeed.",
-"Hydration is victory fuel.",
-"Water strengthens your focus.",
-"Drink water, achieve more.",
-"Hydrate your dreams.",
-"Stay hydrated, stay legendary.",
-
-"Drink water for peak performance.",
-"Hydrate to recharge.",
-"Water refreshes everything.",
-"Stay hydrated, stay fearless.",
-"Drink water and conquer.",
-"Hydrate your confidence.",
-"Water keeps you sharp.",
-"Drink water and power through.",
-"Hydrate your inner champion.",
-"Stay hydrated and unstoppable.",
-
-"Water boosts your brilliance.",
-"Drink water for a fresh start.",
-"Hydrate and feel amazing.",
-"Water fuels creativity.",
-"Stay hydrated and thrive.",
-"Drink water and keep moving.",
-"Hydrate your success.",
-"Water keeps the momentum.",
-"Stay hydrated and energized.",
-"Drink water and stay strong."
-
-];
-
-function getRandomReminder() {
-    return hydrationTexts[Math.floor(Math.random() * hydrationTexts.length)];
-}
-
-
-function setNotifMode(mode) {
-    const btnSpecific = document.getElementById('btn-specific');
-    const btnInterval = document.getElementById('btn-interval');
-    const specOptions = document.getElementById('specific-options');
-    const intOptions = document.getElementById('interval-options');
-
-    // Only update if the elements exist in the HTML
-    if (btnSpecific) btnSpecific.className = mode === 'specific' ? 'active' : '';
-    if (btnInterval) btnInterval.className = mode === 'interval' ? 'active' : '';
-    
-    if (specOptions) specOptions.style.display = mode === 'specific' ? 'block' : 'none';
-    if (intOptions) intOptions.style.display = mode === 'interval' ? 'block' : 'none';
-}
-
-async function saveGlobalGoal() {
-    const goalInput = document.getElementById('goal-val');
-    if (!goalInput) return;
-
-    const newGoalLiters = parseFloat(goalInput.value);
-
-    // 1. Validation
-    if (newGoalLiters > 0) {
-        // Update the global data object (Cloud state)
-        // Convert Liters to milliliters for the MERN schema
-        data.goal = newGoalLiters * 1000; 
+//         if (!data.history) data.history = {};
         
-        // 2. Sync to MongoDB using the central function
-        // This avoids hardcoding URLs and redundant fetch blocks
-        await syncToCloud(); 
+//         // Save the data to history under the local date string
+//         data.history[oldDateISO] = historyEntry;
+//     }
 
-        showToast(`🎯 Target updated to ${newGoalLiters}L!`);
-        
-        // 3. Optional: Redirect after cloud confirmation
-        setTimeout(() => {
-            window.location.href = 'home.html';
-        }, 1200);
-    } else {
-        showToast("❌ Please enter a valid number (e.g., 2.5)");
+//     // 3. Reset for the new day
+//     data.intake = 0;
+//     data.currentLogs = [];
+//     data.lastLogDate = today;
+
+//     syncToCloud(); // Save the updated history and reset values
+// }
+
+//     // ==========================================
+//     // THEME INITIALIZATION
+//     // ==========================================
+//     updateTheme();
+
+//     // ==========================================
+//     // USER PROFILE UI SETUP
+//     // ==========================================
+//     const displayElement = document.getElementById('username-display');
+//     const initialElement = document.getElementById('user-initial');
+
+//     if (displayElement) {
+//         displayElement.innerText = data.username;
+//     }
+
+//     if (initialElement) {
+//         initialElement.innerText = data.username.charAt(0).toUpperCase();
+//     }
+
+//     // ==========================================
+//     // HOME PAGE UI REFRESH
+//     // ==========================================
+//     if (document.getElementById('percent-text')) {
+//         refreshHome();
+//     }
+
+// });
+
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize Visuals
+    updateTheme(); 
+
+    // 2. Clear One-Time Reminders locally (Optional UI cleanup)
+    if (typeof clearOneTimeReminders === 'function') {
+        clearOneTimeReminders();
     }
-}
 
+    // 3. Fetch Fresh Data from Cloud
+    // This function handles the Daily Reset automatically on the server side
+    loadUserData(); 
+});
 
-// TOGGLE POST MEAL
-async function togglePostMeal() {
-    const toggle = document.getElementById('post-meal-toggle');
+// 4. Save Data (Linked to the unique user key)
+// function saveData() {
+//     localStorage.setItem(storageKey, JSON.stringify(data));
+// }
+
+// 5. Water Logic
+function logWater(ml) {
+    data.intake += ml;
+    if(!data.currentLogs) data.currentLogs = [];
     
-    // 1. Safety check for meal times (sourced from Cloud data)
-    // We ensure bfast, lunch, and dinner all have values before allowing the toggle
-    const meals = data.mealTimes || {};
-    const isComplete = meals.bfast && meals.lunch && meals.dinner;
-
-    if (toggle.checked && !isComplete) {
-        // If times are missing, force the toggle back to OFF
-        toggle.checked = false;
-        showToast("⚠️ Please set Meal times in Insights first!");
-        return;
-    }
-
-    // 2. Update the global data object
-    // This is the variable that home.js reads to trigger notifications
-    data.postMealEnabled = toggle.checked; 
-
-    // 3. Sync the change to MongoDB
-    // We 'await' this so the toast only shows after a successful cloud save
-    await syncToCloud();
-    
-    // 4. Provide UI Feedback
-    if (data.postMealEnabled) {
-        showToast("🥗 Post-meal reminders are now ACTIVE!");
-    } else {
-        showToast("🌑 Post-meal reminders turned OFF");
-    }
-}
-
-
-function updatePassword() {
-    const newP = document.getElementById('new-pass').value;
-    const confP = document.getElementById('conf-pass').value;
-    if (newP === confP && newP !== "") {
-        showNotification("Password updated successfully!");
-        clearPassFields();
-    } else {
-        showNotification("Passwords do not match.");
-    }
-}
-
-function clearPassFields() {
-    document.getElementById('curr-pass').value = "";
-    document.getElementById('new-pass').value = "";
-    document.getElementById('conf-pass').value = "";
-}
-
-function loadReminders() {
-    const list = document.getElementById('reminders-list');
-    if (!list || !data || !data.reminders) return;
-
-    list.innerHTML = "";
-
-    // FIX: Filter by 'active' (the checkbox) rather than 'daily' (the toggle)
-    const activeReminders = data.reminders.filter(rem => rem.active === true);
-
-    if (activeReminders.length === 0) {
-        list.innerHTML = `<p style="text-align:center; opacity:0.5; padding:20px;">No active reminders.</p>`;
-        return;
-    }
-
-    activeReminders.forEach(rem => {
-        const reminderDiv = document.createElement('div');
-        reminderDiv.className = 'reminder-item';
-        
-        // Show whether it is a Daily or One-Time (Once) alarm
-        const typeLabel = rem.daily ? '🔁 DAILY' : '⏱️ ONCE';
-
-        reminderDiv.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="time-tag">🔔 ${rem.time}</span> 
-                <span style="font-size:0.7rem; color:#1565c0; font-weight:bold; background:#f0f4f8; padding:2px 8px; border-radius:5px;">
-                    ${typeLabel} • ACTIVE
-                </span>
-            </div>
-            <span class="msg-tag">"${getRandomReminder()}"</span>
-        `;
-        list.appendChild(reminderDiv);
+    data.currentLogs.push({
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        ml: ml
     });
-}
-
-// Helper to uncheck a box and refresh
-function removeReminder(time) {
-    const box = document.querySelector(`.dummy-times input[value="${time}"]`);
-    if (box) box.checked = false;
-    loadReminders();
-}
-
-async function toggleIntervalFeature() {
-    const isEnabled = document.getElementById('interval-master-toggle').checked;
-    const inputArea = document.getElementById('interval-input-area');
     
-    if (isEnabled) {
-        // Corrected camelCase for JavaScript styles
-        inputArea.style.opacity = "1";
-        inputArea.style.pointerEvents = "auto"; 
-        showToast("Interval reminders active! 💧");
-    } else {
-        inputArea.style.opacity = "0.5";
-        inputArea.style.pointerEvents = "none";
-        showToast("Interval reminders disabled.");
+    refreshHome();
+    syncToCloud(); // Immediate push to MongoDB
+    showToast(`Logged ${ml}ml to Cloud!`);
+}
+
+function undoLog() {
+    if (!data.currentLogs || data.currentLogs.length === 0) return;
+
+    const removedEntry = data.currentLogs.pop();
+    const amountToSubtract = removedEntry.ml || 0;
+    data.intake = Math.max(0, data.intake - amountToSubtract);
+
+    refreshHome();
+    syncToCloud(); // Update the cloud after undo
+}
+
+function logCustom() {
+    const val = document.getElementById('custom-val');
+    const amount = parseInt(val.value);
+    if (amount > 0) {
+        logWater(amount);
+        val.value = ''; // Clear input
+    }
+}
+
+// 6. UI Rendering
+function refreshHome() {
+    const currentIntake = Number(data.intake) || 0;
+    const currentGoal = Number(data.goal) || 2500;
+
+    // % calculation (capped at 100 for UI)
+    const pct = Math.min((currentIntake / currentGoal) * 100, 100);
+
+    /* ============================================================
+       1. UPDATE PERCENT TEXT
+    ============================================================ */
+    const percentDisplay = document.getElementById('percent-text');
+    if (percentDisplay) {
+        percentDisplay.innerText = Math.round((currentIntake / currentGoal) * 100) + "%";
     }
 
-    // Save the toggle state to our global data object and sync to MongoDB 
-    data.intervalEnabled = isEnabled;
-    await syncToCloud();
+    /* ============================================================
+       2. UPDATE LITERS TEXT
+    ============================================================ */
+    const litersDisplay = document.getElementById('liters-text');
+    if (litersDisplay) {
+        litersDisplay.innerText =
+            `${(currentIntake / 1000).toFixed(1)} / ${(currentGoal / 1000).toFixed(1)} L`;
+    }
+
+    /* ============================================================
+       3. UPDATE PROGRESS RING
+    ============================================================ */
+    const circle = document.getElementById('progress-bar');
+    if (circle) {
+        const radius = 45;
+        const circumference = 2 * Math.PI * radius;
+
+        const offset = circumference - (pct / 100) * circumference;
+
+        circle.style.strokeDasharray = circumference;
+        circle.style.strokeDashoffset = offset;
+    }
+
+    /* ============================================================
+       4. STREAK CALCULATION
+    ============================================================ */
+    const streakDisplay = document.getElementById('streak');
+    if (streakDisplay) {
+        data.streak = calculateStreak();
+        streakDisplay.innerText = data.streak;
+    }
+
+    /* ============================================================
+       5. BEST INTAKE CALCULATION
+    ============================================================ */
+    const bestDisplay = document.getElementById('best');
+    const history = data.history || {};
+
+    const historicalMax = Math.max(
+        ...Object.values(history).map(e =>
+            (typeof e === 'object' ? e.total : e) || 0
+        ),
+        0
+    );
+
+    const bestValue = Math.max(historicalMax, currentIntake);
+
+    if (bestDisplay) {
+        bestDisplay.innerText = (bestValue / 1000).toFixed(1) + " L";
+    }
+
+    /* ============================================================
+       6. SAVE DATA
+    ============================================================ */
+    syncToCloud()
 }
 
-
-async function addManualTime() {
-    const timeInput = document.getElementById('manual-t');
-    const timeValue = timeInput.value;
-
-    if (!timeValue) return showToast("❌ Select a time.");
-
-    // Create the new reminder object
-    const newReminder = {
-        time: timeValue,
-        daily: true, 
-        active: true
-    };
-
-    // Push to existing array instead of overwriting
-    if (!data.reminders) data.reminders = [];
-    data.reminders.push(newReminder);
-
-    // Sort times so they appear in chronological order
-    data.reminders.sort((a, b) => a.time.localeCompare(b.time));
-
-    await syncToCloud(); // Save to MongoDB
-    renderCloudReminders(); // Re-render the list
-    timeInput.value = "";
-    showToast(`✅ Added ${timeValue}`);
+// 7. Navigation & Session Logic
+function toggleLogout() {
+    const menu = document.getElementById('logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
 }
 
-async function deleteReminder(index) {
-    // Remove the item from the local data array immediately
-    const deletedTime = data.reminders[index].time;
-    data.reminders.splice(index, 1); 
-
-    // Sync the change to MongoDB
-    await syncToCloud(); 
-
-    // Re-render the UI so the row disappears
-    renderCloudReminders(); 
-
-    // Use your existing toast for non-intrusive feedback
-    showToast(`🗑️ Deleted reminder for ${deletedTime}`);
+function logout() {
+    localStorage.removeItem('currentUser'); // Clear session
+    window.location.href = 'index.html';    // Redirect to login
 }
 
-async function updateReminderStatus(index, isChecked) {
-    data.reminders[index].active = isChecked;
-    await syncToCloud();
-    loadReminders();
+function updateTheme() {
+    const hr = new Date().getHours();
+    const b = document.body;
+    b.classList.remove('theme-morning', 'theme-day', 'theme-evening', 'theme-night');
+    if (hr >= 6 && hr < 10) b.classList.add('theme-morning');
+    else if (hr >= 10 && hr < 16) b.classList.add('theme-day');
+    else if (hr >= 16 && hr < 18) b.classList.add('theme-evening');
+    else b.classList.add('theme-night');
 }
 
-async function updateReminderType(index, isDaily) {
-    data.reminders[index].daily = isDaily;
-    await syncToCloud();
-    loadReminders();
+async function loadUserData() {
+    if (!token) return window.location.href = 'index.html';
+
+    try {
+        const response = await fetch(`${API_URL}/api/user/data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error("Unauthorized");
+
+        const cloudData = await response.json(); 
+        
+        data = cloudData;       
+        isDataReady = true;     
+        
+        // ✅ FIX: Update Sidebar UI directly from the Cloud response
+        const displayElement = document.getElementById('username-display');
+        const initialElement = document.getElementById('user-initial');
+
+        if (displayElement && data.username) {
+            displayElement.innerText = data.username;
+        }
+        
+        if (initialElement && data.username) {
+            initialElement.innerText = data.username[0].toUpperCase();
+        }
+        
+        // Refresh the progress ring and stats
+        refreshHome();
+        checkBadges(); 
+
+    } catch (err) {
+        console.error("Cloud connection failed:", err);
+        showToast("Error loading profile from Cloud.");
+    }
 }
 
-/* ============================================================
-   POST-MEAL REMINDERS (In home.js)
-============================================================ */
-if (data.postMealEnabled && data.mealTimes) {
-    const mealKeys = ['bfast', 'lunch', 'dinner'];
+async function syncToCloud() {
+    if (!isDataReady) return; 
+
+    try {
+        await fetch(`${API_URL}/api/user/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, userData: data })
+        });
+    } catch (err) {
+        console.error("Cloud sync failed", err);
+    }
+}
+
+function calculateStreak() {
+    const history = data.history || {};
+    const todayISO = new Date().toISOString().split('T')[0];
+    const goal = data.goal || 2500;
     
-    mealKeys.forEach(key => {
-        const mealTime = data.mealTimes[key];
-        if (mealTime) {
-            let [hours, minutes] = mealTime.split(':').map(Number);
-            
-            // Logic to add 30 minutes
-            minutes += 30;
-            if (minutes >= 60) {
-                hours = (hours + 1) % 24;
-                minutes -= 60;
-            }
+    // Get all historical dates and sort them (newest first)
+    const dates = Object.keys(history).sort((a, b) => new Date(b) - new Date(a));
+    
+    let currentStreak = 0;
+    
+    // 1. Check if Today's goal is met to start the streak
+    if (data.intake >= goal) {
+        currentStreak = 1;
+    }
 
-            const triggerTime = hours.toString().padStart(2, '0') + ":" + 
+    // 2. Look back through history
+    let checkDate = new Date();
+    // Start checking from yesterday
+    checkDate.setDate(checkDate.getDate() - 1);
+
+    while (true) {
+        const dateStr = checkDate.getFullYear() + '-' + 
+                        String(checkDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(checkDate.getDate()).padStart(2, '0');
+        
+        const entry = history[dateStr];
+        const dayTotal = (entry && typeof entry === 'object') ? entry.total : (entry || 0);
+
+        if (dayTotal >= goal) {
+            // If the user met the goal today, we add to that. 
+            // If they haven't met today yet, the streak starts from yesterday.
+            if (data.intake >= goal) {
+                currentStreak++;
+            } else {
+                // If today isn't met, but yesterday was, the streak is whatever the history says
+                currentStreak++; 
+            }
+            // Move to the previous day
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            // Streak broken
+            break;
+        }
+    }
+    
+    return currentStreak;
+}
+
+// This runs every 60 seconds to check for reminders
+
+let lastNotificationTime = Date.now();
+// 1. Tracking for Interval Reminders
+let lastIntervalNotification = Date.now();
+
+setInterval(() => {
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                        now.getMinutes().toString().padStart(2, '0');
+
+    /* ============================================================
+       1. SPECIFIC TIME REMINDERS (Firing Logic)
+    ============================================================ */
+    const specificCheckboxes = document.querySelectorAll('.dummy-times input[type="checkbox"]:checked');
+
+    specificCheckboxes.forEach(box => {
+        const timeValue = box.value;
+        const row = box.closest('.time-toggle-row');
+        const isDaily = row.querySelector('.daily-toggle').checked;
+
+        if (timeValue === currentTime) {
+            // Get a random motivational message from your dataset
+            const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to hydrate!";
+            sendSystemNotification("Hydration Reminder", `⏰ ${timeValue}: ${randomMsg}`);
+            
+            // MODIFICATION: Removed the immediate uncheck logic here.
+            // We want it to stay checked for the rest of the day.
+        }
+    });
+
+    /* ============================================================
+       2. INTERVAL-BASED REMINDERS
+    ============================================================ */
+    const isIntervalEnabled = document.getElementById('interval-master-toggle')?.checked;
+    const intervalMinutes = parseInt(document.getElementById('interval-min')?.value);
+
+    if (isIntervalEnabled && intervalMinutes > 0) {
+        const elapsed = (Date.now() - lastIntervalNotification) / 60000;
+
+        if (elapsed >= intervalMinutes) {
+            sendSystemNotification("Interval Reminder", `💧 Repeat Alert: It's been ${intervalMinutes} minutes!`);
+            lastIntervalNotification = Date.now();
+        }
+    }
+
+    /* ============================================================
+    3. POST-MEAL REMINDERS (Calculated 30m Delay)
+    ============================================================ */
+    if (data.postMealEnabled && data.mealTimes) {
+        const mealKeys = ['bfast', 'lunch', 'dinner'];
+        const mealNames = { bfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+
+        mealKeys.forEach(key => {
+            const mealTime = data.mealTimes[key];
+            if (mealTime) {
+                // Split the "HH:mm" string
+                let [hours, minutes] = mealTime.split(':').map(Number);
+                
+                // Add 30 minutes
+                minutes += 30;
+                if (minutes >= 60) {
+                    hours = (hours + 1) % 24;
+                    minutes -= 60;
+                }
+
+                // Format back to "HH:mm" for comparison
+                const triggerTime = hours.toString().padStart(2, '0') + ":" + 
                                 minutes.toString().padStart(2, '0');
 
-            if (triggerTime === currentTime) {
-                sendSystemNotification("Post-Meal Reminder", `🥗 30 mins since meal: Time to hydrate!`);
+                if (triggerTime === currentTime) {
+                    const name = mealNames[key];
+                    sendSystemNotification("Post-Meal Reminder", `🥗 30 mins since ${name}: Time to hydrate!`);
+                }
+            }
+        });
+    }
+
+    /* ============================================================
+       4. MIDNIGHT RESET (The "Once" Cleanup)
+    ============================================================ */
+    if (currentTime === "00:00") {
+        document.querySelectorAll('.time-toggle-row').forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const dailyToggle = row.querySelector('.daily-toggle');
+
+            // If checked but NOT daily, uncheck it for the new day
+            if (checkbox.checked && !dailyToggle.checked) {
+                checkbox.checked = false;
+            }
+        });
+
+        // Refresh UI and Sync the cleared states to the Cloud
+        if (typeof loadReminders === 'function') loadReminders();
+        if (typeof syncToCloud === 'function') syncToCloud();
+    }
+
+}, 60000);
+
+// Global Heartbeat: Every minute check for triggers AND resets
+setInterval(() => {
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                        now.getMinutes().toString().padStart(2, '0');
+
+    // --- 1. MIDNIGHT RESET ---
+    // Clears any "One-Time" toggles that might have been missed or added late
+    if (currentTime === "00:00") {
+        if (typeof clearOneTimeReminders === 'function') clearOneTimeReminders();
+    }
+
+    // --- 2. NOTIFICATION TRIGGER ---
+    const timeRows = document.querySelectorAll('.time-toggle-row');
+    timeRows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        const dailyToggle = row.querySelector('.daily-toggle');
+        const alarmTime = checkbox.value;
+
+        // Find the index early to use in our safety check
+        const reminderIndex = data.reminders.findIndex(r => r.time === alarmTime);
+
+        // UPDATED IF STATEMENT: Checks time, checkbox, AND cloud-state status
+        if (checkbox.checked && alarmTime === currentTime && data.reminders[reminderIndex]?.active !== false) {
+            
+            // Pull a unique message from your dataset
+            const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to hydrate!"; 
+            
+            // Show the system notification
+            if (typeof sendSystemNotification === 'function') {
+                sendSystemNotification("Hydration Reminder", `🔔 ${alarmTime}: ${randomMsg}`);
+            }
+
+            // If it's a "Once" alarm, turn it off immediately after notifying
+            if (!dailyToggle.checked) {
+                // 1. Update the cloud-synced data object
+                if (reminderIndex !== -1) {
+                    data.reminders[reminderIndex].active = false;
+                }
+            
+                // 2. Update the UI Checkbox
+                checkbox.checked = false; 
+            
+                // 3. Refresh summary lists and Push update to MongoDB
+                if (typeof loadReminders === 'function') loadReminders();
+                if (typeof syncToCloud === 'function') syncToCloud();
             }
         }
     });
+}, 60000);
+
+function checkAchievements() {
+    const streak = calculateStreak();
+    let newBadges = [...(data.badges || [])];
+
+    if (streak >= 5 && !newBadges.includes('High Five')) {
+        newBadges.push('High Five');
+        showNotification("🏆 Badge Unlocked: 5 Day Streak!");
+    }
+    
+    if (data.intake >= 4000 && !newBadges.includes('Water Whale')) {
+        newBadges.push('Water Whale');
+        showNotification("🐳 Badge Unlocked: 4L in one day!");
+    }
+
+    if (newBadges.length > (data.badges || []).length) {
+        data.badges = newBadges;
+        syncToCloud();
+    }
 }
 
-function renderCloudReminders() {
-    const container = document.querySelector('.dummy-times');
-    if (!container || !data.reminders) return;
+function checkBadges() {
+    const streak = calculateStreak();
+    let currentBadges = data.badges || [];
+    let earnedNew = false;
 
-    container.innerHTML = ""; 
+    // 🏆 Achievement: 5-Day Finisher
+    if (streak >= 5 && !currentBadges.includes('5-day-streak')) {
+        currentBadges.push('5-day-streak');
+        showNotification("🏆 Achievement Unlocked: 5-Day Finisher!");
+        earnedNew = true;
+    }
 
-    data.reminders.forEach((rem, index) => {
-        const row = document.createElement('div');
-        row.className = 'time-toggle-row';
-        row.innerHTML = `
-            <label>
-                <input type="checkbox" value="${rem.time}" ${rem.active ? 'checked' : ''} 
-                       onchange="updateReminderStatus(${index}, this.checked)"> 
-                ${rem.time}
-            </label>
-            <div class="daily-wrapper">
-                <span>Daily</span>
-                <label class="switch small">
-                    <input type="checkbox" class="daily-toggle" ${rem.daily ? 'checked' : ''} 
-                           onchange="updateReminderType(${index}, this.checked)">
-                    <span class="slider"></span>
-                </label>
-                <button onclick="deleteReminder(${index})" style="background:none; border:none; margin-left:10px; cursor:pointer;">🗑️</button>
-            </div>
-        `;
-        container.appendChild(row);
-    });
+    // 🏆 Achievement: Ocean Master (Hit 100% today)
+    if (data.intake >= data.goal && !currentBadges.includes('ocean-master')) {
+        currentBadges.push('ocean-master');
+        showNotification("🌊 Achievement Unlocked: Ocean Master!");
+        earnedNew = true;
+    }
 
-    // CRITICAL: Refresh the summary list whenever the main list is rendered
-    loadReminders(); 
+    if (earnedNew) {
+        data.badges = currentBadges;
+        syncToCloud(); // Sync the new badges to MongoDB
+    }
 }
 
-// Helper to display human-readable time
-function formatTo12Hr(time24) {
-    if (!time24) return "";
-    let [hours, minutes] = time24.split(':');
-    let ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
-    return `${hours}:${minutes} ${ampm}`;
-    syncToCloud();
-}
-
-
-window.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initial UI Setup
-    setNotifMode('specific');
-
-    // 2. Fetch Fresh Data from MongoDB
-    // We 'await' this so the 'data' object is fully populated before we touch the UI
-    await loadUserData(); 
-
-    // ✅ FIX 1: Update Sidebar Profile with Cloud Data
-    if (data && data.username) {
-        const nameDisplay = document.getElementById('username-display');
-        const initialDisplay = document.getElementById('user-initial');
-        
-        if (nameDisplay) nameDisplay.innerText = data.username;
-        if (initialDisplay) initialDisplay.innerText = data.username[0].toUpperCase();
+// NOTIFICATIONS
+window.addEventListener('DOMContentLoaded', () => {
+    // Ask the user for permission as soon as they land on the page
+    if ("Notification" in window) {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
     }
-
-    // ✅ FIX 2: Sync Post-Meal Toggle (Ensures it stays ON if saved in Cloud)
-    const postMealToggle = document.getElementById('post-meal-toggle');
-    if (postMealToggle) {
-        // Use a direct boolean check from the cloud data
-        postMealToggle.checked = (data.postMealEnabled === true);
-    }
-
-    // 3. Goal Input Initialization
-    const goalInput = document.getElementById('goal-val');
-    if (goalInput && data.goal) {
-        goalInput.value = (data.goal / 1000).toFixed(1); 
-    }
-
-    // 4. Handle Default Reminders (Only for first-time users)
-    if (!data.reminders || data.reminders.length === 0) {
-        data.reminders = [
-            { time: "07:00", daily: true, active: false },
-            { time: "11:00", daily: true, active: false },
-            { time: "14:00", daily: true, active: false },
-            { time: "17:00", daily: true, active: false }
-        ];
-
-        // Save these defaults to the cloud so they persist
-        await syncToCloud(); 
-    }
-
-    // 5. Render the UI
-    renderCloudReminders();
 });
 
-function saveInterval() {
-    const intervalInput = document.getElementById('interval-min');
-    const intervalValue = intervalInput.value;
-
-    // Check if the value is empty, null, or less than/equal to 0
-    if (!intervalValue || intervalValue <= 0) {
-        showNotification("❌ Please enter a number or a value");
-    } else {
-        // Here you would typically save the value to localStorage
-        localStorage.setItem('hydrationInterval', intervalValue);
-        
-        showNotification(`✅ Time interval saved: ${intervalValue} minutes`);
-        
-        // Hide the done button after saving (optional, matches your previous logic)
-        document.getElementById('interval-done-btn').style.display = 'none';
+function sendSystemNotification(title, message) {
+    if (Notification.permission === "granted") {
+        new Notification(title, {
+            body: message,
+            icon: 'icons/water-drop.png', // Path to your app icon
+            badge: 'icons/badge.png',      // Small icon for the status bar
+            vibrate: [200, 100, 200]       // Vibration pattern for Android
+        });
+    } else if (Notification.permission !== "denied") {
+        // Fallback if they haven't decided yet
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                sendSystemNotification(title, message);
+            }
+        });
     }
 }
 
-function checkIntervalInput() {
-    const input = document.getElementById('interval-min');
-    const doneBtn = document.getElementById('interval-done-btn');
-    
-    // Show the button as soon as there is any text in the box
-    if (input.value.length > 0) {
-        doneBtn.style.display = 'block';
-    } else {
-        doneBtn.style.display = 'none';
+// EFFECTS
+class Noise {
+    constructor(seed = 0) {
+        this.grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+        this.p = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+        this.perm = new Array(512);
+        this.gradP = new Array(512);
+        this.seed(seed);
+    }
+    seed(seed) {
+        if (seed > 0 && seed < 1) seed *= 65536;
+        seed = Math.floor(seed);
+        if (seed < 256) seed |= seed << 8;
+        for (let i = 0; i < 256; i++) {
+            let v = i & 1 ? this.p[i] ^ (seed & 255) : this.p[i] ^ ((seed >> 8) & 255);
+            this.perm[i] = this.perm[i + 256] = v;
+            const g = this.grad3[v % 12];
+            this.gradP[i] = this.gradP[i + 256] = {x: g[0], y: g[1]};
+        }
+    }
+    fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    lerp(a, b, t) { return (1 - t) * a + t * b; }
+    perlin2(x, y) {
+        let X = Math.floor(x), Y = Math.floor(y);
+        x -= X; y -= Y; X &= 255; Y &= 255;
+        const n00 = this.gradP[X + this.perm[Y]].x * x + this.gradP[X + this.perm[Y]].y * y;
+        const n01 = this.gradP[X + this.perm[Y + 1]].x * x + this.gradP[X + this.perm[Y + 1]].y * (y - 1);
+        const n10 = this.gradP[X + 1 + this.perm[Y]].x * (x - 1) + this.gradP[X + 1 + this.perm[Y]].y * y;
+        const n11 = this.gradP[X + 1 + this.perm[Y + 1]].x * (x - 1) + this.gradP[X + 1 + this.perm[Y + 1]].y * (y - 1);
+        const u = this.fade(x);
+        return this.lerp(this.lerp(n00, n10, u), this.lerp(n01, n11, u), this.fade(y));
     }
 }
-
-// Add this inside your script or at the top of settings.js
-function handlePointer(e) {
-    const b = document.getElementById('waves-bg').getBoundingClientRect();
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // Update the global mouse object used by the WaterWaves class
-    if (window.wavesInstance) {
-        window.wavesInstance.mouse.x = x - b.left;
-        window.wavesInstance.mouse.y = y - b.top;
-        window.wavesInstance.mouse.set = true;
-    }
-}
-
-window.addEventListener('mousemove', handlePointer);
-window.addEventListener('touchmove', handlePointer, { passive: true });
 
 function showToast(message) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = 'toast-msg'; // Styling from insights.css or global
+    toast.className = 'toast-msg';
     toast.innerText = message;
     container.appendChild(toast);
-    
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 500);
     }, 3000);
 }
 
+class WaterWaves {
+    constructor(containerId, config) {
+        this.container = document.getElementById(containerId);
+        this.canvas = document.createElement('canvas');
+        this.canvas.className = 'waves-canvas';
+        this.container.appendChild(this.canvas);
+        this.ctx = this.canvas.getContext('2d');
+        this.config = config;
+        this.noise = new Noise(Math.random());
+        this.lines = [];
+        this.mouse = { x: -10, y: 0, lx: 0, ly: 0, sx: 0, sy: 0, v: 0, vs: 0, a: 0, set: false };
+        this.init();
+    }
 
-function saveInterval() {
-    const intervalValue = document.getElementById('interval-min').value;
-    if (!intervalValue || intervalValue <= 0) {
-        showToast("❌ Please enter a valid interval");
-    } else {
-        showToast(`✅ Reminders set every ${intervalValue} minutes`);
+    init() {
+    window.addEventListener('resize', () => this.onResize());
+    // Desktop support
+    window.addEventListener('mousemove', (e) => this.onPointerMove(e));
+    // Mobile touch support
+    window.addEventListener('touchmove', (e) => {
+        this.onPointerMove(e.touches[0]);
+    }, { passive: true });
+    
+    this.onResize();
+    this.tick(0);
+    }
+
+    onResize() {
+        const b = this.container.getBoundingClientRect();
+        this.canvas.width = b.width;
+        this.canvas.height = b.height;
+        this.setLines(b.width, b.height);
+    }
+
+    setLines(width, height) {
+        this.lines = [];
+        const oWidth = width + 200, oHeight = height + 30;
+        const totalLines = Math.ceil(oWidth / this.config.xGap);
+        const totalPoints = Math.ceil(oHeight / this.config.yGap);
+        const xStart = (width - this.config.xGap * totalLines) / 2;
+        const yStart = (height - this.config.yGap * totalPoints) / 2;
+
+        for (let i = 0; i <= totalLines; i++) {
+            const pts = [];
+            for (let j = 0; j <= totalPoints; j++) {
+                pts.push({ x: xStart + this.config.xGap * i, y: yStart + this.config.yGap * j, wave: { x: 0, y: 0 }, cursor: { x: 0, y: 0, vx: 0, vy: 0 } });
+            }
+            this.lines.push(pts);
+        }
+    }
+
+    onPointerMove(e) {
+    const b = this.container.getBoundingClientRect();
+    this.mouse.x = e.clientX - b.left;
+    this.mouse.y = e.clientY - b.top;
+    if (!this.mouse.set) {
+        this.mouse.sx = this.mouse.lx = this.mouse.x;
+        this.mouse.sy = this.mouse.ly = this.mouse.y;
+        this.mouse.set = true;
+    }
+    }
+
+    tick(t) {
+        this.mouse.sx += (this.mouse.x - this.mouse.sx) * 0.1;
+        this.mouse.sy += (this.mouse.y - this.mouse.sy) * 0.1;
+        const dx = this.mouse.x - this.mouse.lx, dy = this.mouse.y - this.mouse.ly;
+        const d = Math.hypot(dx, dy);
+        this.mouse.vs += (d - this.mouse.vs) * 0.1;
+        this.mouse.vs = Math.min(100, this.mouse.vs);
+        this.mouse.lx = this.mouse.x; this.mouse.ly = this.mouse.y;
+        this.mouse.a = Math.atan2(dy, dx);
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = this.config.lineColor;
+
+        this.lines.forEach(pts => {
+            pts.forEach(p => {
+                const move = this.noise.perlin2((p.x + t * this.config.waveSpeedX) * 0.002, (p.y + t * this.config.waveSpeedY) * 0.0015) * 12;
+                p.wave.x = Math.cos(move) * this.config.waveAmpX;
+                p.wave.y = Math.sin(move) * this.config.waveAmpY;
+
+                const mdx = p.x - this.mouse.sx, mdy = p.y - this.mouse.sy;
+                const dist = Math.hypot(mdx, mdy), l = Math.max(175, this.mouse.vs);
+                if (dist < l) {
+                    const f = Math.cos(dist * 0.001) * (1 - dist / l);
+                    p.cursor.vx += Math.cos(this.mouse.a) * f * l * this.mouse.vs * 0.00065;
+                    p.cursor.vy += Math.sin(this.mouse.a) * f * l * this.mouse.vs * 0.00065;
+                }
+                p.cursor.vx += (0 - p.cursor.x) * this.config.tension;
+                p.cursor.vy += (0 - p.cursor.y) * this.config.tension;
+                p.cursor.vx *= this.config.friction; p.cursor.vy *= this.config.friction;
+                p.cursor.x += p.cursor.vx * 2; p.cursor.y += p.cursor.vy * 2;
+            });
+
+            this.ctx.moveTo(pts[0].x + pts[0].wave.x, pts[0].y + pts[0].wave.y);
+            pts.forEach((p, idx) => {
+                const isLast = idx === pts.length - 1;
+                this.ctx.lineTo(p.x + p.wave.x + (isLast ? 0 : p.cursor.x), p.y + p.wave.y + (isLast ? 0 : p.cursor.y));
+            });
+        });
+        this.ctx.stroke();
+        requestAnimationFrame((time) => this.tick(time));
     }
 }
+
+// Initialize with your settings
+new WaterWaves('waves-bg', {
+    lineColor: "#ffffff",
+    waveSpeedX: 0.0125,
+    waveSpeedY: 0.01,
+    waveAmpX: 40,
+    waveAmpY: 20,
+    friction: 0.9,
+    tension: 0.01,
+    xGap: 12,
+    yGap: 36
+});
