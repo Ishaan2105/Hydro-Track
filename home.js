@@ -266,7 +266,8 @@ async function loadUserData() {
 }
 
 async function syncToCloud() {
-    if (!isDataReady) return; 
+    // ✅ NEW: If data isn't ready or still loading, STOP the sync.
+    if (!isDataReady || data.username === "Loading...") return;
 
     try {
         await fetch(`${API_URL}/api/user/sync`, {
