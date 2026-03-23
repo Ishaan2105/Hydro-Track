@@ -538,7 +538,10 @@ function sendSystemNotification(title, message) {
             body: message,
             icon: 'icons/water-drop.png', // Path to your app icon
             badge: 'icons/badge.png',      // Small icon for the status bar
-            vibrate: [200, 100, 200]       // Vibration pattern for Android
+            vibrate: [200, 100, 200],    // Vibration pattern for Android
+            tag: 'hydration-alert',    // Replaces old alerts so your panel isn't messy
+            renotify: true,            // Makes the phone vibrate/sound again even if same tag
+            requireInteraction: true
         });
     } else if (Notification.permission !== "denied") {
         // Fallback if they haven't decided yet
