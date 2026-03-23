@@ -202,7 +202,7 @@ function refreshHome() {
     /* ============================================================
        6. SAVE DATA
     ============================================================ */
-    syncToCloud()
+    // syncToCloud()
 }
 
 // 7. Navigation & Session Logic
