@@ -3,6 +3,7 @@
   "short_name": "Hydro",
   "start_url": "home.html",
   "display": "standalone",
+  "orientation": "landscape",
   "background_color": "#e3f2fd",
   "theme_color": "#1565c0",
   "icons": [
