@@ -384,11 +384,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     setNotifMode('specific');
 
     // 2. Fetch Fresh Data from MongoDB
-    // We 'await' this so the 'data' object is fully populated before we touch the UI
+    // We 'await' this so the global 'data' object is fully populated
     await loadUserData(); 
 
-    // ✅ FIX 1: Update Sidebar Profile with Cloud Data
-    if (data && data.username) {
+    // ✅ FIX 1: Sidebar Profile Sync
+    if (isDataReady && data.username) {
         const nameDisplay = document.getElementById('username-display');
         const initialDisplay = document.getElementById('user-initial');
         
@@ -396,10 +396,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (initialDisplay) initialDisplay.innerText = data.username[0].toUpperCase();
     }
 
-    // ✅ FIX 2: Sync Post-Meal Toggle (Ensures it stays ON if saved in Cloud)
+    // ✅ FIX 2: Strict Post-Meal Toggle Sync
     const postMealToggle = document.getElementById('post-meal-toggle');
-    if (postMealToggle) {
-        // Use a direct boolean check from the cloud data
+    if (postMealToggle && isDataReady) {
+        // Specifically check for the boolean 'true' to avoid undefined resets
         postMealToggle.checked = (data.postMealEnabled === true);
     }
 
@@ -410,7 +410,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 4. Handle Default Reminders (Only for first-time users)
-    if (!data.reminders || data.reminders.length === 0) {
+    if (isDataReady && (!data.reminders || data.reminders.length === 0)) {
         data.reminders = [
             { time: "07:00", daily: true, active: false },
             { time: "11:00", daily: true, active: false },
