@@ -315,25 +315,32 @@ async function updateReminderType(index, isDaily) {
     loadReminders();
 }
 
-// Function to validate and toggle Post-Meal reminders
-async function togglePostMeal() {
-    const toggle = document.getElementById('post-meal-toggle');
+/* ============================================================
+   POST-MEAL REMINDERS (In home.js)
+============================================================ */
+if (data.postMealEnabled && data.mealTimes) {
+    const mealKeys = ['bfast', 'lunch', 'dinner'];
     
-    // Safety check for meal times
-    const meals = data.mealTimes || {};
-    const isComplete = meals.bfast && meals.lunch && meals.dinner;
+    mealKeys.forEach(key => {
+        const mealTime = data.mealTimes[key];
+        if (mealTime) {
+            let [hours, minutes] = mealTime.split(':').map(Number);
+            
+            // Logic to add 30 minutes
+            minutes += 30;
+            if (minutes >= 60) {
+                hours = (hours + 1) % 24;
+                minutes -= 60;
+            }
 
-    if (toggle.checked && !isComplete) {
-        toggle.checked = false;
-        showToast("⚠️ Please set Meal times in Insights first!");
-        return;
-    }
+            const triggerTime = hours.toString().padStart(2, '0') + ":" + 
+                                minutes.toString().padStart(2, '0');
 
-    // ✅ CRITICAL: Update the data object so syncToCloud sends the right value
-    data.postMealEnabled = toggle.checked; 
-    await syncToCloud();
-    
-    showToast(data.postMealEnabled ? "🥗 Reminders Active!" : "Notifications Disabled");
+            if (triggerTime === currentTime) {
+                sendSystemNotification("Post-Meal Reminder", `🥗 30 mins since meal: Time to hydrate!`);
+            }
+        }
+    });
 }
 
 function renderCloudReminders() {
